@@ -10,8 +10,16 @@ export async function GET() {
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2021'
+      ['P2021', 'P2022'].includes(error.code)
     ) {
+      console.error('Failed to load site settings in footer API:', error)
+      return NextResponse.json(null)
+    }
+    if (error instanceof Prisma.PrismaClientInitializationError) {
+      console.error(
+        'Prisma initialization error while loading site settings in footer API:',
+        error,
+      )
       return NextResponse.json(null)
     }
     throw error
