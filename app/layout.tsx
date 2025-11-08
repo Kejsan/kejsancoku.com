@@ -35,22 +35,34 @@ export default async function RootLayout({
   if (settingsResult.status === "fulfilled") {
     settings = settingsResult.value
   } else if (
-    !(
-      settingsResult.reason instanceof Prisma.PrismaClientKnownRequestError &&
-      settingsResult.reason.code === "P2021"
-    )
+    settingsResult.reason instanceof Prisma.PrismaClientKnownRequestError &&
+    ["P2021", "P2022"].includes(settingsResult.reason.code)
   ) {
+    console.error("Failed to load site settings:", settingsResult.reason)
+    settings = null
+  } else if (
+    settingsResult.reason instanceof Prisma.PrismaClientInitializationError
+  ) {
+    console.error("Prisma initialization error while loading site settings:", settingsResult.reason)
+    settings = null
+  } else {
     throw settingsResult.reason
   }
 
   if (appsResult.status === "fulfilled") {
     apps = appsResult.value
   } else if (
-    !(
-      appsResult.reason instanceof Prisma.PrismaClientKnownRequestError &&
-      appsResult.reason.code === "P2021"
-    )
+    appsResult.reason instanceof Prisma.PrismaClientKnownRequestError &&
+    ["P2021", "P2022"].includes(appsResult.reason.code)
   ) {
+    console.error("Failed to load web apps:", appsResult.reason)
+    apps = []
+  } else if (
+    appsResult.reason instanceof Prisma.PrismaClientInitializationError
+  ) {
+    console.error("Prisma initialization error while loading web apps:", appsResult.reason)
+    apps = []
+  } else {
     throw appsResult.reason
   }
 
