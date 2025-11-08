@@ -57,6 +57,9 @@ export default function WorkSamples() {
     fetch("/api/footer")
       .then((res) => res.json())
       .then((data: SiteSettings | null) => setSettings(data))
+      .catch((error) => {
+        console.error("Failed to load footer settings", error)
+      })
   }, [])
 
   const scrollToTop = () => {
@@ -196,6 +199,10 @@ export default function WorkSamples() {
       },
     },
   ]
+
+  const scrollButtonLabel = settings?.email
+    ? `Scroll to top and contact ${settings.email}`
+    : "Scroll to top"
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-[#000080] to-slate-900">
@@ -399,59 +406,12 @@ export default function WorkSamples() {
         <button
           onClick={scrollToTop}
           className="fixed bottom-6 right-6 z-50 bg-[#fb6163] hover:bg-[#fb6163]/90 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
-          aria-label="Scroll to top"
+          aria-label={scrollButtonLabel}
+          title={scrollButtonLabel}
         >
           <ChevronUp className="w-6 h-6" />
         </button>
       )}
-
-      {/* Footer */}
-      <footer className="py-8 px-4 border-t border-white/10">
-        <div className="max-w-6xl mx-auto text-center">
-          {settings && (
-            <div className="text-white/60">
-              {settings.copyright}
-              {settings.linkedin && (
-                <>
-                  {" "}|{" "}
-                  <a
-                    href={settings.linkedin}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="text-[#54a09b] hover:text-[#54a09b]/80 transition-colors"
-                  >
-                    LinkedIn
-                  </a>
-                </>
-              )}
-              {settings.github && (
-                <>
-                  {" "}|{" "}
-                  <a
-                    href={settings.github}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="text-[#54a09b] hover:text-[#54a09b]/80 transition-colors"
-                  >
-                    GitHub
-                  </a>
-                </>
-              )}
-              {settings.email && (
-                <>
-                  {" "}|{" "}
-                  <a
-                    href={`mailto:${settings.email}`}
-                    className="text-[#54a09b] hover:text-[#54a09b]/80 transition-colors"
-                  >
-                    Email
-                  </a>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </footer>
     </div>
   )
 }
