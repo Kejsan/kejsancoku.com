@@ -24,13 +24,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  let settings: SiteSettings | null = null
+  let apps: WebApp[] = []
+
   const [settingsResult, appsResult] = await Promise.allSettled([
     prisma.siteSettings.findFirst(),
     prisma.webApp.findMany(),
   ])
-
-  let settings: SiteSettings | null = null
-  let apps: WebApp[] = []
 
   if (settingsResult.status === "fulfilled") {
     settings = settingsResult.value
