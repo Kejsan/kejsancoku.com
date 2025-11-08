@@ -5,7 +5,6 @@ import Link from "next/link"
 import { ChevronUp } from "lucide-react"
 import type { SiteSettings } from "@prisma/client"
 import { NAV_LINKS } from "@/lib/navigation-links"
-import { SiteSettings } from "@prisma/client"
 
 import HeroSection from "@/components/sections/hero-section"
 import AboutSection from "@/components/sections/about-section"
@@ -56,14 +55,6 @@ export default function Portfolio() {
               duration: 600,
             },
             "-=400",
-          )
-          .add(
-            {
-     const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-const workSamples = [
           )
           .add(
             {
@@ -154,15 +145,11 @@ const workSamples = [
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
-useEffect(() => {
-  fetch("/api/footer")
-    .then((res) => res.json())
-    .then((data: SiteSettings | null) => setSettings(data));
-}, []);
 
-const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
+  useEffect(() => {
+    fetch("/api/footer")
+      .then((res) => res.json())
+      .then((data: SiteSettings | null) => setSettings(data))
   }, [])
 
   const scrollToTop = () => {

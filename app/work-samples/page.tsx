@@ -4,10 +4,8 @@ import { useEffect, useState } from "react"
 import { ArrowLeft, ExternalLink, ChevronUp, TrendingUp, Users, FileText, Globe } from "lucide-react"
 import Link from "next/link"
 import type { SiteSettings } from "@prisma/client"
-
-export default function WorkSamples() {
-  const [showScrollTop, setShowScrollTop] = useState(false)
-  const [settings, setSettings] = useState<SiteSettings | null>(null)
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 
 export default function WorkSamples() {
   const [showScrollTop, setShowScrollTop] = useState(false)
@@ -58,7 +56,8 @@ export default function WorkSamples() {
   useEffect(() => {
     fetch("/api/footer")
       .then((res) => res.json())
-codex/import-sitesettings-and-update-usestate-types
+      .then((data: SiteSettings | null) => setSettings(data))
+  }, [])
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -221,8 +220,7 @@ codex/import-sitesettings-and-update-usestate-types
           <div className="max-w-6xl mx-auto text-center work-header">
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">Work Samples</h1>
             <p className="text-xl text-white/80 mb-8 max-w-3xl mx-auto">
-              A showcase of my digital marketing work across various companies and platforms. From social media growth
-                to content creation, here&apos;s a comprehensive look at my professional contributions.
+              A showcase of my digital marketing work across various companies and platforms. From social media growth to content creation, here&apos;s a comprehensive look at my professional contributions.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
               <div className="text-center">
@@ -248,7 +246,7 @@ codex/import-sitesettings-and-update-usestate-types
         {/* Work Samples */}
         <section className="px-4 pb-20">
           <div className="max-w-6xl mx-auto space-y-16">
-            {workSamples.map((sample, index) => (
+            {workSamples.map((sample) => (
               <Card
                 key={sample.id}
                 className="work-category bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300"
@@ -351,8 +349,7 @@ codex/import-sitesettings-and-update-usestate-types
                       </div>
                       {sample.id === "cardo-ai" && (
                         <p className="text-white/60 text-sm mt-4 italic">
-                          These content pieces are among the articles I wrote. Authorship can be verified by contacting
-                            Cardo AI&apos;s HR department.
+                          These content pieces are among the articles I wrote. Authorship can be verified by contacting Cardo AI&apos;s HR department.
                         </p>
                       )}
                     </div>
@@ -375,8 +372,7 @@ codex/import-sitesettings-and-update-usestate-types
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold text-white mb-6">Interested in Working Together?</h2>
             <p className="text-white/80 text-lg mb-8">
-                These samples represent just a portion of my work. I&apos;d love to discuss how I can help grow your digital
-              presence.
+              These samples represent just a portion of my work. I&apos;d love to discuss how I can help grow your digital presence.
             </p>
             <div className="flex justify-center gap-6">
               <a href="mailto:kejsan@example.com">
