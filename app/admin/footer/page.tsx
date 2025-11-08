@@ -70,7 +70,7 @@ export default function FooterPage() {
           value={data.twitter || ""}
           onChange={handleChange}
           placeholder="Twitter URL"
-          className="border p-2 w--full"
+          className="border p-2 w-full"
         />
         <input
           name="threads"
