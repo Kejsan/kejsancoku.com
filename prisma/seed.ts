@@ -348,7 +348,7 @@ async function main() {
       linkedin: "https://www.linkedin.com/in/kejsan/",
       github: "https://github.com/kejsan",
       twitter: "https://twitter.com/kejsan",
-      email: "mailto:kejsan@example.com",
+      email: "kejsancoku@gmail.com",
     },
   })
   console.log("Seeded site settings.")

@@ -66,6 +66,8 @@ export default function WorkSamples() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
+  const emailHref = settings?.email ? `mailto:${settings.email}` : null
+
   const workSamples = [
     {
       id: "cardo-ai",
@@ -382,11 +384,17 @@ export default function WorkSamples() {
               These samples represent just a portion of my work. I&apos;d love to discuss how I can help grow your digital presence.
             </p>
             <div className="flex justify-center gap-6">
-              <a href="mailto:kejsan@example.com">
-                <Button size="lg" className="bg-[#fb6163] hover:bg-[#fb6163]/90 text-white">
-                  Get In Touch
+              {emailHref ? (
+                <a href={emailHref}>
+                  <Button size="lg" className="bg-[#fb6163] hover:bg-[#fb6163]/90 text-white">
+                    Get In Touch
+                  </Button>
+                </a>
+              ) : (
+                <Button size="lg" className="bg-[#fb6163]/50 text-white/70 cursor-not-allowed" disabled>
+                  Email Unavailable
                 </Button>
-              </a>
+              )}
               <Link href="/">
                 <Button
                   size="lg"
