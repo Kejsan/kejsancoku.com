@@ -1,15 +1,44 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { ArrowLeft, ExternalLink, ChevronUp, TrendingUp, Users, FileText, Globe } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { ArrowLeft, ExternalLink, ChevronUp, TrendingUp, Users, FileText, Globe, Loader2 } from "lucide-react"
 import Link from "next/link"
 import type { SiteSettings } from "@prisma/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
+type WorkSampleStat = {
+  label: string
+  value: string
+}
+
+type WorkSampleLink = {
+  title?: string
+  platform?: string
+  description?: string
+  url: string
+}
+
+type WorkSample = {
+  id: number | string
+  title: string
+  description?: string | null
+  icon?: string | null
+  stats?: WorkSampleStat[] | null
+  mainContent?: WorkSampleLink | null
+  socialChannels?: WorkSampleLink[] | null
+  socialHeading?: string | null
+  writingSamples?: WorkSampleLink[] | null
+  writingSamplesNote?: string | null
+  additionalNote?: string | null
+}
+
 export default function WorkSamples() {
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [settings, setSettings] = useState<SiteSettings | null>(null)
+  const [workSamples, setWorkSamples] = useState<WorkSample[]>([])
+  const [isLoadingSamples, setIsLoadingSamples] = useState(true)
+  const [samplesError, setSamplesError] = useState<string | null>(null)
 
   useEffect(() => {
     // Load anime.js dynamically
@@ -62,145 +91,61 @@ export default function WorkSamples() {
       })
   }, [])
 
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchWorkSamples = async () => {
+      try {
+        setIsLoadingSamples(true)
+        const response = await fetch("/api/worksamples")
+        if (!response.ok) {
+          throw new Error("Failed to load work samples")
+        }
+        const data: WorkSample[] = await response.json()
+        if (isMounted) {
+          setWorkSamples(Array.isArray(data) ? data : [])
+          setSamplesError(null)
+        }
+      } catch (error) {
+        if (isMounted) {
+          setSamplesError(error instanceof Error ? error.message : "Failed to load work samples")
+          setWorkSamples([])
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingSamples(false)
+        }
+      }
+    }
+
+    fetchWorkSamples()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   const emailHref = settings?.email ? `mailto:${settings.email}` : null
 
-  const workSamples = [
-    {
-      id: "cardo-ai",
-      title: "Cardo AI",
-      description: "AI-powered financial services platform where I managed social media growth and content strategy",
-      icon: <TrendingUp className="w-8 h-8 text-[#fb6163]" />,
-      stats: [
-        { label: "LinkedIn Growth", value: "2k → 19k followers" },
-        { label: "Content Pieces", value: "50+ articles" },
-        { label: "Platforms Managed", value: "LinkedIn, Instagram" },
-      ],
-      socialChannels: [
-        {
-          platform: "LinkedIn",
-          description: "Grew from 2k to 19k followers through strategic content and engagement",
-          url: "https://www.linkedin.com/company/cardoai/posts/",
-        },
-        {
-          platform: "Instagram",
-          description: "Showcased employees, office life, and company values",
-          url: "https://www.instagram.com/cardoai_/",
-        },
-      ],
-      writingSamples: [
-        {
-          title: "How AI & LLMs are Transforming the Financial Services Industry",
-          url: "https://www.linkedin.com/pulse/how-ai-llms-transforming-financial-services-industry-asset-based-0lpzf/",
-        },
-        {
-          title: "Ethical & Regulatory Insights leveraging Large Language Models",
-          url: "https://www.linkedin.com/pulse/ethical-regulatory-insights-leveraging-large-language-models-financial-xdojf/",
-        },
-        {
-          title: "Exploring Fine-Tuning LLMs for Enhanced Performance",
-          url: "https://www.linkedin.com/pulse/exploring-fine-tuning-llms-enhanced-performance-abf-future-use-jq3df/",
-        },
-        {
-          title: "Unlock Opportunities & Unique Insights in US Lending & Private Debt",
-          url: "https://www.linkedin.com/pulse/unlock-opportunities-unique-insights-us-lending-private-debt-landscape-suanf/",
-        },
-        {
-          title: "Cardo AI Contributes to MSCA Industrial Doctoral Network on Digital Finance",
-          url: "https://cardoai.com/cardo-ai-contributes-to-msca-industrial-doctoral-network-on-digital-finance/",
-        },
-        {
-          title: "Cardo AI Achieves SOC2 Type 2 Certification",
-          url: "https://cardoai.com/cardo-ai-achieves-soc2-type-2-certification/",
-        },
-      ],
-    },
-    {
-      id: "ipervox",
-      title: "Ipervox",
-      description: "Voice technology platform enabling voice applications for Amazon Alexa and Google Assistant",
-      icon: <Users className="w-8 h-8 text-[#fb6163]" />,
-      stats: [
-        { label: "Content Platform", value: "Medium Blog" },
-        { label: "Social Channels", value: "3 platforms" },
-        { label: "Content Focus", value: "Voice Technology" },
-      ],
-      mainContent: {
-        title: "Content for main website, blog, and Medium profile",
-        url: "https://ipervox.medium.com/",
-      },
-      socialChannels: [
-        {
-          platform: "LinkedIn",
-          url: "https://www.linkedin.com/company/ipervox/",
-        },
-        {
-          platform: "Facebook",
-          url: "https://www.facebook.com/ipervox/",
-        },
-        {
-          platform: "Instagram",
-          url: "https://www.instagram.com/ipervox/",
-        },
-      ],
-      additionalNote: "Also created content for platforms like Quora, Reddit, etc.",
-    },
-    {
-      id: "solis-marketing",
-      title: "SolisMarketing",
-      description: "Voluntary contributions to local marketing agency blog focusing on Kitsap County businesses",
-      icon: <FileText className="w-8 h-8 text-[#fb6163]" />,
-      stats: [
-        { label: "Articles Written", value: "6 blog posts" },
-        { label: "Focus Area", value: "Local SEO & Marketing" },
-        { label: "Contribution Type", value: "Voluntary" },
-      ],
-      writingSamples: [
-        {
-          title: "How to Create a Winning Content Marketing Plan",
-          url: "https://www.solismarketing.com/post/how-to-create-a-winning-content-marketing-plan-the-smart-way",
-        },
-        {
-          title: "Effective SEO Strategies for Kitsap County Businesses",
-          url: "https://www.solismarketing.com/post/effective-seo-strategies-for-kitsap-county-businesses",
-        },
-        {
-          title: "Why Bremerton Businesses Need a Local Marketing Agency",
-          url: "https://www.solismarketing.com/post/why-bremerton-businesses-need-a-local-marketing-agency",
-        },
-        {
-          title: "How a Social Media Agency in Kitsap County Can Boost Your Online Presence",
-          url: "https://www.solismarketing.com/post/how-a-social-media-agency-in-kitsap-county-can-boost-your-online-presence",
-        },
-        {
-          title: "Top 5 Benefits of Hiring a Kitsap County Marketing Agency",
-          url: "https://www.solismarketing.com/post/top-5-benefits-of-hiring-a-kitsap-county-marketing-agency",
-        },
-        {
-          title: "How to Get Started with Digital Marketing in Kitsap County",
-          url: "https://www.solismarketing.com/post/how-to-get-started-with-digital-marketing-kitsap-county",
-        },
-      ],
-    },
-    {
-      id: "personal-blog",
-      title: "Personal Blog",
-      description: "My personal Medium blog where I share insights on digital marketing and SEO strategies",
-      icon: <Globe className="w-8 h-8 text-[#fb6163]" />,
-      stats: [
-        { label: "Platform", value: "Medium" },
-        { label: "Content Type", value: "Marketing Insights" },
-        { label: "Audience", value: "Digital Marketers" },
-      ],
-      mainContent: {
-        title: "Kejsan Coku – Medium",
-        url: "https://medium.com/@kejsancoku",
-      },
-    },
-  ]
+  const iconMap = useMemo(
+    () => ({
+      trendingup: TrendingUp,
+      trending_up: TrendingUp,
+      trendingUp: TrendingUp,
+      users: Users,
+      people: Users,
+      filetext: FileText,
+      file_text: FileText,
+      fileText: FileText,
+      globe: Globe,
+      world: Globe,
+    }),
+    []
+  )
 
   const scrollButtonLabel = settings?.email
     ? `Scroll to top and contact ${settings.email}`
@@ -255,127 +200,149 @@ export default function WorkSamples() {
         {/* Work Samples */}
         <section className="px-4 pb-20">
           <div className="max-w-6xl mx-auto space-y-16">
-            {workSamples.map((sample) => (
-              <Card
-                key={sample.id}
-                className="work-category bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300"
-              >
-                <CardContent className="p-8">
-                  {/* Header */}
-                  <div className="flex items-start gap-6 mb-8">
-                    <div className="p-4 bg-gradient-to-r from-[#54a09b]/20 to-[#fb6163]/20 rounded-xl border border-[#fb6163]/30">
-                      {sample.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h2 className="text-3xl font-bold text-white mb-3">{sample.title}</h2>
-                      <p className="text-white/80 text-lg mb-4">{sample.description}</p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {sample.stats.map((stat, i) => (
-                          <div key={i} className="bg-white/5 rounded-lg p-3 border border-white/10">
-                            <div className="text-[#fb6163] font-semibold text-sm">{stat.label}</div>
-                            <div className="text-white font-medium">{stat.value}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+            {isLoadingSamples ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-[#fb6163]" />
+              </div>
+            ) : samplesError ? (
+              <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-6 text-center text-red-100">
+                {samplesError}
+              </div>
+            ) : workSamples.length === 0 ? (
+              <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center text-white/70">
+                No work samples available at the moment. Please check back later.
+              </div>
+            ) : (
+              workSamples.map((sample) => {
+                const iconKey = typeof sample.icon === "string" ? sample.icon.toLowerCase() : ""
+                const IconComponent = iconKey ? iconMap[iconKey] ?? null : null
 
-                  {/* Main Content Link */}
-                  {sample.mainContent && (
-                    <div className="mb-8">
-                      <h3 className="text-xl font-semibold text-white mb-4">Main Content Platform</h3>
-                      <a
-                        href={sample.mainContent.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-gradient-to-r from-[#54a09b] to-[#fb6163] text-white px-6 py-3 rounded-lg hover:from-[#54a09b]/90 hover:to-[#fb6163]/90 transition-all duration-300"
-                      >
-                        <Globe className="w-5 h-5" />
-                        {sample.mainContent.title}
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    </div>
-                  )}
-
-                  {/* Social Channels */}
-                  {sample.socialChannels && (
-                    <div className="mb-8">
-                      <h3 className="text-xl font-semibold text-white mb-4">
-                        {sample.id === "cardo-ai"
-                          ? "Social Media Channels I've Managed (up till June 1, 2024)"
-                          : "Managed Social Media Channels"}
-                      </h3>
-                      <div className="grid md:grid-cols-2 gap-4">
-                          {sample.socialChannels.map((channel: any, i: number) => (
-                          <div key={i} className="bg-white/5 rounded-lg p-4 border border-white/10">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-semibold text-white">{channel.platform}</h4>
-                              <a
-                                href={channel.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[#fb6163] hover:text-[#fb6163]/80 transition-colors"
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                              </a>
+                return (
+                  <Card
+                    key={sample.id}
+                    className="work-category bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300"
+                  >
+                    <CardContent className="p-8">
+                      {/* Header */}
+                      <div className="flex items-start gap-6 mb-8">
+                        <div className="p-4 bg-gradient-to-r from-[#54a09b]/20 to-[#fb6163]/20 rounded-xl border border-[#fb6163]/30">
+                          {IconComponent ? (
+                            <IconComponent className="h-8 w-8 text-[#fb6163]" />
+                          ) : (
+                            <Globe className="h-8 w-8 text-[#fb6163]" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h2 className="text-3xl font-bold text-white mb-3">{sample.title}</h2>
+                          {sample.description && (
+                            <p className="text-white/80 text-lg mb-4">{sample.description}</p>
+                          )}
+                          {!!sample.stats?.length && (
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                              {sample.stats?.map((stat, i) => (
+                                <div key={i} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                                  <div className="text-[#fb6163] font-semibold text-sm">{stat.label}</div>
+                                  <div className="text-white font-medium">{stat.value}</div>
+                                </div>
+                              ))}
                             </div>
-                              {"description" in channel && (
-                                <p className="text-white/70 text-sm mb-3">{channel.description}</p>
-                              )}
-                            <a
-                              href={channel.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#54a09b] hover:text-[#54a09b]/80 text-sm break-all transition-colors"
-                            >
-                              {channel.url}
-                            </a>
-                          </div>
-                        ))}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
 
-                  {/* Writing Samples */}
-                  {sample.writingSamples && (
-                    <div className="mb-6">
-                      <h3 className="text-xl font-semibold text-white mb-4">Published Writing Samples</h3>
-                      <div className="grid gap-3">
-                        {sample.writingSamples.map((article, i) => (
+                      {/* Main Content Link */}
+                      {sample.mainContent?.url && (
+                        <div className="mb-8">
+                          <h3 className="text-xl font-semibold text-white mb-4">Main Content Platform</h3>
                           <a
-                            key={i}
-                            href={article.url}
+                            href={sample.mainContent.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 group"
+                            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#54a09b] to-[#fb6163] text-white px-6 py-3 rounded-lg hover:from-[#54a09b]/90 hover:to-[#fb6163]/90 transition-all duration-300"
                           >
-                            <span className="text-white group-hover:text-[#fb6163] transition-colors">
-                              {article.title}
-                            </span>
-                            <ExternalLink className="w-4 h-4 text-white/60 group-hover:text-[#fb6163] transition-colors" />
+                            <Globe className="w-5 h-5" />
+                            {sample.mainContent.title ?? sample.mainContent.url}
+                            <ExternalLink className="w-4 h-4" />
                           </a>
-                        ))}
-                      </div>
-                      {sample.id === "cardo-ai" && (
-                        <p className="text-white/60 text-sm mt-4 italic">
-                          These content pieces are among the articles I wrote. Authorship can be verified by contacting Cardo AI&apos;s HR department.
-                        </p>
+                        </div>
                       )}
-                    </div>
-                  )}
 
-                  {/* Additional Note */}
-                  {sample.additionalNote && (
-                    <div className="mt-6 p-4 bg-[#fb6163]/10 border border-[#fb6163]/20 rounded-lg">
-                      <p className="text-white/80 italic">{sample.additionalNote}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                      {/* Social Channels */}
+                      {!!sample.socialChannels?.length && (
+                        <div className="mb-8">
+                          <h3 className="text-xl font-semibold text-white mb-4">
+                            {sample.socialHeading ?? "Managed Social Media Channels"}
+                          </h3>
+                          <div className="grid md:grid-cols-2 gap-4">
+                            {sample.socialChannels?.map((channel, i) => (
+                              <div key={i} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-semibold text-white">{channel.platform ?? channel.title}</h4>
+                                  <a
+                                    href={channel.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#fb6163] hover:text-[#fb6163]/80 transition-colors"
+                                  >
+                                    <ExternalLink className="w-4 h-4" />
+                                  </a>
+                                </div>
+                                {channel.description && (
+                                  <p className="text-white/70 text-sm mb-3">{channel.description}</p>
+                                )}
+                                <a
+                                  href={channel.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#54a09b] hover:text-[#54a09b]/80 text-sm break-all transition-colors"
+                                >
+                                  {channel.url}
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Writing Samples */}
+                      {!!sample.writingSamples?.length && (
+                        <div className="mb-6">
+                          <h3 className="text-xl font-semibold text-white mb-4">Published Writing Samples</h3>
+                          <div className="grid gap-3">
+                            {sample.writingSamples?.map((article, i) => (
+                              <a
+                                key={i}
+                                href={article.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 group"
+                              >
+                                <span className="text-white group-hover:text-[#fb6163] transition-colors">
+                                  {article.title ?? article.url}
+                                </span>
+                                <ExternalLink className="w-4 h-4 text-white/60 group-hover:text-[#fb6163] transition-colors" />
+                              </a>
+                            ))}
+                          </div>
+                          {sample.writingSamplesNote && (
+                            <p className="text-white/60 text-sm mt-4 italic">{sample.writingSamplesNote}</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Additional Note */}
+                      {sample.additionalNote && (
+                        <div className="mt-6 p-4 bg-[#fb6163]/10 border border-[#fb6163]/20 rounded-lg">
+                          <p className="text-white/80 italic">{sample.additionalNote}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              })
+            )}
           </div>
         </section>
-
         {/* Call to Action */}
         <section className="px-4 py-16 bg-gradient-to-r from-[#000080]/20 to-[#fb6163]/20">
           <div className="max-w-4xl mx-auto text-center">
