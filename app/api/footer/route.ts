@@ -18,6 +18,10 @@ function normalizeSiteSettingsPayload<T extends Record<string, any>>(payload: T)
 }
 
 export async function GET() {
+  if (!prisma) {
+    console.warn('Prisma client unavailable for footer GET request.')
+    return NextResponse.json(null, { status: 503 })
+  }
   try {
     const settings = await prisma.siteSettings.findFirst()
     return NextResponse.json(settings)
@@ -44,6 +48,12 @@ export async function POST(request: Request) {
   const session = await getAdminSession()
   if (!session) {
     return new NextResponse('Unauthorized', { status: 401 })
+  }
+  if (!prisma) {
+    return NextResponse.json(
+      { error: 'Database not configured' },
+      { status: 503 }
+    )
   }
   const payload = await request.json()
   const { id: _ignoredId, ...rawData } = payload
@@ -74,6 +84,12 @@ export async function PUT(request: Request) {
   if (!session) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
+  if (!prisma) {
+    return NextResponse.json(
+      { error: 'Database not configured' },
+      { status: 503 }
+    )
+  }
   const payload = await request.json()
   const { id: _ignoredId, ...rawData } = payload
   const data = normalizeSiteSettingsPayload(rawData)
@@ -102,6 +118,12 @@ export async function DELETE() {
   const session = await getAdminSession()
   if (!session) {
     return new NextResponse('Unauthorized', { status: 401 })
+  }
+  if (!prisma) {
+    return NextResponse.json(
+      { error: 'Database not configured' },
+      { status: 503 }
+    )
   }
   try {
     await prisma.siteSettings.deleteMany()

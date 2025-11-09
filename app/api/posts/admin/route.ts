@@ -9,6 +9,13 @@ export async function GET() {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
+  if (!prisma) {
+    return NextResponse.json(
+      { error: 'Database not configured' },
+      { status: 503 }
+    )
+  }
+
   const posts = await prisma.post.findMany({
     orderBy: { createdAt: 'desc' },
   })
