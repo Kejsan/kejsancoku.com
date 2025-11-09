@@ -12,10 +12,16 @@ const SheetTrigger = SheetPrimitive.Trigger
 
 const SheetClose = SheetPrimitive.Close
 
-type SheetPortalProps = React.ComponentPropsWithoutRef<typeof SheetPrimitive.Portal>
+type SheetPortalProps = React.ComponentPropsWithoutRef<
+  typeof SheetPrimitive.Portal
+> & {
+  className?: string
+}
 
-const SheetPortal = ({ className, ...props }: SheetPortalProps) => (
-  <SheetPrimitive.Portal className={cn(className)} {...props} />
+const SheetPortal = ({ className, children, ...props }: SheetPortalProps) => (
+  <SheetPrimitive.Portal {...props}>
+    <div className={cn(className)}>{children}</div>
+  </SheetPrimitive.Portal>
 )
 SheetPortal.displayName = SheetPrimitive.Portal.displayName
 
