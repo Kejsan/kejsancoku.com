@@ -27,43 +27,53 @@ export default async function RootLayout({
   let settings: SiteSettings | null = null
   let apps: WebApp[] = []
 
-  const [settingsResult, appsResult] = await Promise.allSettled([
-    prisma.siteSettings.findFirst(),
-    prisma.webApp.findMany(),
-  ])
-
-  if (settingsResult.status === "fulfilled") {
-    settings = settingsResult.value
-  } else if (
-    settingsResult.reason instanceof Prisma.PrismaClientKnownRequestError &&
-    ["P2021", "P2022"].includes(settingsResult.reason.code)
-  ) {
-    console.error("Failed to load site settings:", settingsResult.reason)
-    settings = null
-  } else if (
-    settingsResult.reason instanceof Prisma.PrismaClientInitializationError
-  ) {
-    console.error("Prisma initialization error while loading site settings:", settingsResult.reason)
-    settings = null
+  if (!prisma) {
+    console.warn("Prisma client unavailable. Falling back to default layout data.")
   } else {
-    throw settingsResult.reason
-  }
+    const [settingsResult, appsResult] = await Promise.allSettled([
+      prisma.siteSettings.findFirst(),
+      prisma.webApp.findMany(),
+    ])
 
-  if (appsResult.status === "fulfilled") {
-    apps = appsResult.value
-  } else if (
-    appsResult.reason instanceof Prisma.PrismaClientKnownRequestError &&
-    ["P2021", "P2022"].includes(appsResult.reason.code)
-  ) {
-    console.error("Failed to load web apps:", appsResult.reason)
-    apps = []
-  } else if (
-    appsResult.reason instanceof Prisma.PrismaClientInitializationError
-  ) {
-    console.error("Prisma initialization error while loading web apps:", appsResult.reason)
-    apps = []
-  } else {
-    throw appsResult.reason
+    if (settingsResult.status === "fulfilled") {
+      settings = settingsResult.value
+    } else if (
+      settingsResult.reason instanceof Prisma.PrismaClientKnownRequestError &&
+      ["P2021", "P2022"].includes(settingsResult.reason.code)
+    ) {
+      console.error("Failed to load site settings:", settingsResult.reason)
+      settings = null
+    } else if (
+      settingsResult.reason instanceof Prisma.PrismaClientInitializationError
+    ) {
+      console.error(
+        "Prisma initialization error while loading site settings:",
+        settingsResult.reason,
+      )
+      settings = null
+    } else {
+      throw settingsResult.reason
+    }
+
+    if (appsResult.status === "fulfilled") {
+      apps = appsResult.value
+    } else if (
+      appsResult.reason instanceof Prisma.PrismaClientKnownRequestError &&
+      ["P2021", "P2022"].includes(appsResult.reason.code)
+    ) {
+      console.error("Failed to load web apps:", appsResult.reason)
+      apps = []
+    } else if (
+      appsResult.reason instanceof Prisma.PrismaClientInitializationError
+    ) {
+      console.error(
+        "Prisma initialization error while loading web apps:",
+        appsResult.reason,
+      )
+      apps = []
+    } else {
+      throw appsResult.reason
+    }
   }
 
   return (

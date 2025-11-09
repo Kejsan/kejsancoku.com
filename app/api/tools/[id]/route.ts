@@ -11,6 +11,13 @@ export async function PUT(
     return new NextResponse(null, { status: 401 })
   }
 
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not configured" },
+      { status: 503 }
+    )
+  }
+
   const id = parseInt(params.id, 10)
   const data = await request.json()
   const updatedTool = await prisma.tool.update({
@@ -31,6 +38,13 @@ export async function DELETE(
   const session = await getAdminSession()
   if (!session) {
     return new NextResponse(null, { status: 401 })
+  }
+
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not configured" },
+      { status: 503 }
+    )
   }
 
   const id = parseInt(params.id, 10)
