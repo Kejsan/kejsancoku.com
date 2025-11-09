@@ -3,6 +3,20 @@ import prisma from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
 import { Prisma } from '@prisma/client'
 
+function normalizeSiteSettingsPayload<T extends Record<string, any>>(payload: T): T {
+  const normalized: Record<string, any> = { ...payload }
+  const email = normalized.email
+  if (typeof email === 'string') {
+    const sanitized = email.replace(/^mailto:/i, '').trim()
+    if (sanitized) {
+      normalized.email = sanitized
+    } else {
+      normalized.email = null
+    }
+  }
+  return normalized as T
+}
+
 export async function GET() {
   try {
     const settings = await prisma.siteSettings.findFirst()
@@ -32,7 +46,8 @@ export async function POST(request: Request) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
   const payload = await request.json()
-  const { id: _ignoredId, ...data } = payload
+  const { id: _ignoredId, ...rawData } = payload
+  const data = normalizeSiteSettingsPayload(rawData)
   try {
     const settings = await prisma.$transaction(async (tx) => {
       const existing = await tx.siteSettings.findFirst()
@@ -60,7 +75,8 @@ export async function PUT(request: Request) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
   const payload = await request.json()
-  const { id: _ignoredId, ...data } = payload
+  const { id: _ignoredId, ...rawData } = payload
+  const data = normalizeSiteSettingsPayload(rawData)
   try {
     const settings = await prisma.$transaction(async (tx) => {
       const existing = await tx.siteSettings.findFirst()
