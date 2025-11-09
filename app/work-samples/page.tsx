@@ -1,7 +1,17 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ArrowLeft, ExternalLink, ChevronUp, TrendingUp, Users, FileText, Globe, Loader2 } from "lucide-react"
+import {
+  ArrowLeft,
+  ExternalLink,
+  ChevronUp,
+  TrendingUp,
+  Users,
+  FileText,
+  Globe,
+  Loader2,
+} from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
 import type { SiteSettings } from "@prisma/client"
 import { Button } from "@/components/ui/button"
@@ -132,7 +142,7 @@ export default function WorkSamples() {
 
   const emailHref = settings?.email ? `mailto:${settings.email}` : null
 
-  const iconMap = useMemo(
+  const iconMap = useMemo<Record<string, LucideIcon>>(
     () => ({
       trendingup: TrendingUp,
       trending_up: TrendingUp,
@@ -215,7 +225,7 @@ export default function WorkSamples() {
               </div>
             ) : (
               workSamples.map((sample) => {
-                const iconKey = typeof sample.icon === "string" ? sample.icon.toLowerCase() : ""
+                const iconKey = typeof sample.icon === "string" ? sample.icon.toLowerCase() : undefined
                 const IconComponent = iconKey ? iconMap[iconKey] ?? null : null
                 const hasDetailedLinks = Boolean(
                   sample.mainContent?.url ||
