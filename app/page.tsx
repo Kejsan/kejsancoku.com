@@ -20,6 +20,8 @@ export default function Portfolio() {
   const blogRef = useRef<HTMLDivElement>(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [settings, setSettings] = useState<SiteSettings | null>(null)
+  const [settingsError, setSettingsError] = useState<string | null>(null)
+  const [isLoadingSettings, setIsLoadingSettings] = useState<boolean>(true)
 
   useEffect(() => {
     // Load anime.js dynamically
@@ -147,12 +149,44 @@ export default function Portfolio() {
   }, [])
 
   useEffect(() => {
-    fetch("/api/footer")
-      .then((res) => res.json())
-      .then((data: SiteSettings | null) => setSettings(data))
-      .catch((error) => {
+    let isMounted = true
+
+    const loadSettings = async () => {
+      try {
+        setIsLoadingSettings(true)
+        const response = await fetch("/api/footer")
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch footer settings: ${response.status}`)
+        }
+
+        const data: SiteSettings | null = await response.json()
+
+        if (!isMounted) {
+          return
+        }
+
+        setSettings(data)
+        setSettingsError(null)
+      } catch (error) {
         console.error("Failed to load footer settings", error)
-      })
+        if (!isMounted) {
+          return
+        }
+        setSettings(null)
+        setSettingsError("We're unable to load contact details right now.")
+      } finally {
+        if (isMounted) {
+          setIsLoadingSettings(false)
+        }
+      }
+    }
+
+    void loadSettings()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const scrollToTop = () => {
@@ -218,7 +252,7 @@ export default function Portfolio() {
 
       <NewsletterSection />
 
-      <ContactSection />
+      <ContactSection settings={settings} isLoading={isLoadingSettings} error={settingsError} />
 
       {/* Scroll to Top Button */}
       {showScrollTop && (
