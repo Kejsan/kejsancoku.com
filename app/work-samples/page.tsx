@@ -23,6 +23,7 @@ type WorkSample = {
   id: number | string
   title: string
   description?: string | null
+  url?: string | null
   icon?: string | null
   stats?: WorkSampleStat[] | null
   mainContent?: WorkSampleLink | null
@@ -216,6 +217,11 @@ export default function WorkSamples() {
               workSamples.map((sample) => {
                 const iconKey = typeof sample.icon === "string" ? sample.icon.toLowerCase() : ""
                 const IconComponent = iconKey ? iconMap[iconKey] ?? null : null
+                const hasDetailedLinks = Boolean(
+                  sample.mainContent?.url ||
+                    sample.socialChannels?.some((channel) => Boolean(channel.url)) ||
+                    sample.writingSamples?.some((article) => Boolean(article.url))
+                )
 
                 return (
                   <Card
@@ -262,6 +268,22 @@ export default function WorkSamples() {
                           >
                             <Globe className="w-5 h-5" />
                             {sample.mainContent.title ?? sample.mainContent.url}
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Default External Link */}
+                      {!hasDetailedLinks && sample.url && (
+                        <div className="mb-8">
+                          <a
+                            href={sample.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#54a09b] to-[#fb6163] text-white px-6 py-3 rounded-lg hover:from-[#54a09b]/90 hover:to-[#fb6163]/90 transition-all duration-300"
+                          >
+                            <Globe className="w-5 h-5" />
+                            Visit Project
                             <ExternalLink className="w-4 h-4" />
                           </a>
                         </div>
