@@ -4,17 +4,17 @@ import { getAdminSession } from '@/lib/auth'
 import { Prisma } from '@prisma/client'
 
 function normalizeSiteSettingsPayload<T extends Record<string, any>>(payload: T): T {
-  const normalized: T = { ...payload }
+  const normalized: Record<string, any> = { ...payload }
   const email = normalized.email
   if (typeof email === 'string') {
     const sanitized = email.replace(/^mailto:/i, '').trim()
     if (sanitized) {
       normalized.email = sanitized
     } else {
-      delete normalized.email
+      normalized.email = null
     }
   }
-  return normalized
+  return normalized as T
 }
 
 export async function GET() {
