@@ -31,9 +31,27 @@ export async function POST(request: Request) {
   if (!session) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
-  const data = await request.json()
-  const settings = await prisma.siteSettings.create({ data })
-  return NextResponse.json(settings)
+  const payload = await request.json()
+  const { id: _ignoredId, ...data } = payload
+  try {
+    const settings = await prisma.$transaction(async (tx) => {
+      const existing = await tx.siteSettings.findFirst()
+      if (existing) {
+        return tx.siteSettings.update({
+          where: { id: existing.id },
+          data,
+        })
+      }
+      return tx.siteSettings.create({ data })
+    })
+    return NextResponse.json(settings)
+  } catch (error) {
+    console.error('Failed to persist site settings in footer POST API:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return new NextResponse('Invalid site settings payload', { status: 400 })
+    }
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
 }
 
 export async function PUT(request: Request) {
@@ -41,14 +59,27 @@ export async function PUT(request: Request) {
   if (!session) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
-  const data = await request.json()
-  const { id, ...rest } = data
-  const settings = await prisma.siteSettings.upsert({
-    where: { id: id ?? 1 },
-    update: rest,
-    create: rest,
-  })
-  return NextResponse.json(settings)
+  const payload = await request.json()
+  const { id: _ignoredId, ...data } = payload
+  try {
+    const settings = await prisma.$transaction(async (tx) => {
+      const existing = await tx.siteSettings.findFirst()
+      if (existing) {
+        return tx.siteSettings.update({
+          where: { id: existing.id },
+          data,
+        })
+      }
+      return tx.siteSettings.create({ data })
+    })
+    return NextResponse.json(settings)
+  } catch (error) {
+    console.error('Failed to persist site settings in footer PUT API:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return new NextResponse('Invalid site settings payload', { status: 400 })
+    }
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
 }
 
 export async function DELETE() {
@@ -56,6 +87,11 @@ export async function DELETE() {
   if (!session) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
-  await prisma.siteSettings.deleteMany()
-  return NextResponse.json({ deleted: true })
+  try {
+    await prisma.siteSettings.deleteMany()
+    return NextResponse.json({ deleted: true })
+  } catch (error) {
+    console.error('Failed to delete site settings in footer DELETE API:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
 }
