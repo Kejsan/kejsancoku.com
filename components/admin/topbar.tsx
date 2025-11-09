@@ -146,9 +146,9 @@ export function AdminTopbar({ items, user }: AdminTopbarProps) {
             <DropdownMenuItem
               onSelect={(event) => {
                 event.preventDefault()
-                startSignOut(() =>
-                  signOut({ callbackUrl: "/api/auth/signin?callbackUrl=/admin" }),
-                )
+                startSignOut(() => {
+                  void signOut({ callbackUrl: "/api/auth/signin?callbackUrl=/admin" })
+                })
               }}
               disabled={signingOut}
               className="flex items-center gap-2"
