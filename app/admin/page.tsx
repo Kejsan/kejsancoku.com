@@ -104,6 +104,10 @@ function normalizeAuditEntry(entry: RawAuditEntry, index: number): AuditEntry {
 }
 
 async function getAuditEntries(): Promise<AuditEntry[]> {
+  if (!prisma) {
+    return []
+  }
+
   const prismaAny = prisma as Record<string, any>
   const auditClientKey = Object.keys(prismaAny).find((key) => {
     if (!key.toLowerCase().includes("audit")) return false
@@ -136,6 +140,10 @@ async function getAuditEntries(): Promise<AuditEntry[]> {
 }
 
 async function getDashboardStats(): Promise<DashboardStat[]> {
+  if (!prisma) {
+    throw new Error("Prisma client not initialized")
+  }
+
   const [posts, apps, tools, experiences, workSamples] = await Promise.all([
     prisma.post.count(),
     prisma.webApp.count(),
