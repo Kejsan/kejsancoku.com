@@ -1,12 +1,21 @@
+import { Prisma } from "@prisma/client"
+
 import prisma from "./prisma"
 
 export type AuditAction = "CREATE" | "UPDATE" | "DELETE"
 
-export type AuditDiff<T = unknown> = {
-  before: T | null
-  after: T | null
-  changes: Record<string, { before: unknown; after: unknown }>
-}
+type JsonValue = Prisma.InputJsonValue
+
+export type AuditDiff = (
+  & Prisma.InputJsonObject
+  & {
+    before: JsonValue | null
+    after: JsonValue | null
+    changes: Record<string, { before: JsonValue | null; after: JsonValue | null }>
+  }
+)
+
+type JsonRecord = Record<string, JsonValue>
 
 type RecordAuditParams = {
   actorEmail: string | null | undefined
@@ -16,17 +25,17 @@ type RecordAuditParams = {
   diff: AuditDiff
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+function isJsonRecord(value: JsonValue | null): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-function toPlainObject<T>(value: T): T | null {
+function toPlainJson(value: unknown): JsonValue | null {
   if (value === null || value === undefined) {
     return null
   }
 
   try {
-    return JSON.parse(JSON.stringify(value))
+    return JSON.parse(JSON.stringify(value)) as JsonValue
   } catch (_error) {
     return null
   }
@@ -36,26 +45,20 @@ function valuesAreEqual(a: unknown, b: unknown) {
   return JSON.stringify(a) === JSON.stringify(b)
 }
 
-export function buildAuditDiff<TBefore = unknown, TAfter = unknown>(
-  before: TBefore | null,
-  after: TAfter | null,
-): AuditDiff {
-  const plainBefore = toPlainObject(before)
-  const plainAfter = toPlainObject(after)
+export function buildAuditDiff(before: unknown, after: unknown): AuditDiff {
+  const plainBefore = toPlainJson(before)
+  const plainAfter = toPlainJson(after)
 
-  const beforeRecord = isRecord(plainBefore) ? plainBefore : {}
-  const afterRecord = isRecord(plainAfter) ? plainAfter : {}
+  const beforeRecord = isJsonRecord(plainBefore) ? plainBefore : ({} as JsonRecord)
+  const afterRecord = isJsonRecord(plainAfter) ? plainAfter : ({} as JsonRecord)
 
-  const keys = new Set([
-    ...Object.keys(beforeRecord as Record<string, unknown>),
-    ...Object.keys(afterRecord as Record<string, unknown>),
-  ])
+  const keys = new Set([...Object.keys(beforeRecord), ...Object.keys(afterRecord)])
 
-  const changes: Record<string, { before: unknown; after: unknown }> = {}
+  const changes: Record<string, { before: JsonValue | null; after: JsonValue | null }> = {}
 
   for (const key of keys) {
-    const beforeValue = (beforeRecord as Record<string, unknown>)[key]
-    const afterValue = (afterRecord as Record<string, unknown>)[key]
+    const beforeValue = (beforeRecord[key] ?? null) as JsonValue | null
+    const afterValue = (afterRecord[key] ?? null) as JsonValue | null
 
     if (!valuesAreEqual(beforeValue, afterValue)) {
       changes[key] = { before: beforeValue, after: afterValue }
