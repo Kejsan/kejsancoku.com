@@ -3,6 +3,7 @@ import {
   AppWindow,
   FileText,
   Hammer,
+  History,
   House,
   Layers,
   LayoutTemplate,
@@ -51,5 +52,11 @@ export const adminNavItems: AdminNavItem[] = [
     label: "Work Samples",
     icon: LayoutTemplate,
     description: "Highlight portfolio work",
+  },
+  {
+    href: "/admin/audit",
+    label: "Audit Trail",
+    icon: History,
+    description: "Review recent administrative changes",
   },
 ]
