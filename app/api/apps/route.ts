@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
+import { buildAuditDiff, recordAudit } from '@/lib/audit'
 
 export async function GET() {
   if (!prisma) {
@@ -25,6 +26,18 @@ export async function POST(request: Request) {
     )
   }
   const data = await request.json()
-  const app = await prisma.webApp.create({ data })
-  return NextResponse.json(app)
+  try {
+    const app = await prisma.webApp.create({ data })
+    await recordAudit({
+      actorEmail: session.user?.email,
+      entityType: 'WebApp',
+      entityId: app.id,
+      action: 'CREATE',
+      diff: buildAuditDiff(null, app),
+    })
+    return NextResponse.json(app)
+  } catch (error) {
+    console.error('Failed to create web app', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
 }

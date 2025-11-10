@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
 import { sanitizeSiteSettingsPayload, toSiteSettingsResponse } from '@/lib/site-settings'
 import { Prisma } from '@prisma/client'
+import { buildAuditDiff, recordAudit } from '@/lib/audit'
 
 export async function GET() {
   if (!prisma) {
@@ -48,17 +49,28 @@ export async function POST(request: Request) {
   const updateData = sanitized as Prisma.SiteSettingsUpdateInput
   const createData = sanitized as Prisma.SiteSettingsCreateInput
   try {
-    const settings = await prisma.$transaction(async (tx) => {
+    const { record, previous, action } = await prisma.$transaction(async (tx) => {
       const existing = await tx.siteSettings.findFirst()
       if (existing) {
-        return tx.siteSettings.update({
+        const updated = await tx.siteSettings.update({
           where: { id: existing.id },
           data: updateData,
         })
+        return { record: updated, previous: existing, action: 'UPDATE' as const }
       }
-      return tx.siteSettings.create({ data: createData })
+      const created = await tx.siteSettings.create({ data: createData })
+      return { record: created, previous: null, action: 'CREATE' as const }
     })
-    return NextResponse.json(toSiteSettingsResponse(settings))
+
+    await recordAudit({
+      actorEmail: session.user?.email,
+      entityType: 'SiteSettings',
+      entityId: record.id,
+      action,
+      diff: buildAuditDiff(previous, record),
+    })
+
+    return NextResponse.json(toSiteSettingsResponse(record))
   } catch (error) {
     console.error('Failed to persist site settings in footer POST API:', error)
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -85,17 +97,28 @@ export async function PUT(request: Request) {
   const updateData = sanitized as Prisma.SiteSettingsUpdateInput
   const createData = sanitized as Prisma.SiteSettingsCreateInput
   try {
-    const settings = await prisma.$transaction(async (tx) => {
+    const { record, previous, action } = await prisma.$transaction(async (tx) => {
       const existing = await tx.siteSettings.findFirst()
       if (existing) {
-        return tx.siteSettings.update({
+        const updated = await tx.siteSettings.update({
           where: { id: existing.id },
           data: updateData,
         })
+        return { record: updated, previous: existing, action: 'UPDATE' as const }
       }
-      return tx.siteSettings.create({ data: createData })
+      const created = await tx.siteSettings.create({ data: createData })
+      return { record: created, previous: null, action: 'CREATE' as const }
     })
-    return NextResponse.json(toSiteSettingsResponse(settings))
+
+    await recordAudit({
+      actorEmail: session.user?.email,
+      entityType: 'SiteSettings',
+      entityId: record.id,
+      action,
+      diff: buildAuditDiff(previous, record),
+    })
+
+    return NextResponse.json(toSiteSettingsResponse(record))
   } catch (error) {
     console.error('Failed to persist site settings in footer PUT API:', error)
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -117,7 +140,21 @@ export async function DELETE() {
     )
   }
   try {
+    const existing = await prisma.siteSettings.findMany()
+    if (existing.length === 0) {
+      return new NextResponse('Not Found', { status: 404 })
+    }
+
     await prisma.siteSettings.deleteMany()
+
+    await recordAudit({
+      actorEmail: session.user?.email,
+      entityType: 'SiteSettings',
+      entityId: 'SiteSettings',
+      action: 'DELETE',
+      diff: buildAuditDiff(existing, null),
+    })
+
     return NextResponse.json({ deleted: true })
   } catch (error) {
     console.error('Failed to delete site settings in footer DELETE API:', error)

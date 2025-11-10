@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { buildAuditDiff, recordAudit } from '@/lib/audit'
 
 export async function GET() {
   if (!prisma) {
@@ -26,6 +27,18 @@ export async function POST(request: Request) {
     )
   }
   const data = await request.json()
-  const sample = await prisma.workSample.create({ data })
-  return NextResponse.json(sample)
+  try {
+    const sample = await prisma.workSample.create({ data })
+    await recordAudit({
+      actorEmail: session.user?.email,
+      entityType: 'WorkSample',
+      entityId: sample.id,
+      action: 'CREATE',
+      diff: buildAuditDiff(null, sample),
+    })
+    return NextResponse.json(sample)
+  } catch (error) {
+    console.error('Failed to create work sample', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
 }
