@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Calendar, Clock, Share2, Linkedin, Twitter } from "lucide-react"
@@ -14,6 +13,7 @@ import rehypeRaw from "rehype-raw"
 
 export default function BlogPostClient({ post }: { post: Post | null }) {
   const contentRef = useRef<HTMLDivElement>(null)
+  const [shareHref, setShareHref] = useState<string | null>(null)
 
   useEffect(() => {
     if (post) {
@@ -45,6 +45,12 @@ export default function BlogPostClient({ post }: { post: Post | null }) {
       loadAnime()
     }
   }, [post])
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setShareHref(window.location.href)
+    }
+  }, [])
 
   if (!post) {
     return (
@@ -84,6 +90,27 @@ export default function BlogPostClient({ post }: { post: Post | null }) {
     dateModified: new Date(post.updatedAt).toISOString(),
   };
 
+  const shareText = post?.title || "Check out this article from Kejsan"
+  const linkedinShare = shareHref
+    ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareHref)}`
+    : null
+  const xShare = shareHref
+    ? `https://x.com/intent/tweet?url=${encodeURIComponent(shareHref)}&text=${encodeURIComponent(shareText)}`
+    : null
+
+  const handleShare = () => {
+    if (!shareHref) {
+      return
+    }
+    if (typeof navigator !== "undefined" && navigator.share) {
+      void navigator.share({ title: shareText, url: shareHref })
+      return
+    }
+    if (xShare) {
+      window.open(xShare, "_blank", "noopener,noreferrer")
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-[#000080] to-slate-900">
       <script
@@ -103,7 +130,13 @@ export default function BlogPostClient({ post }: { post: Post | null }) {
                 <ArrowLeft className="w-4 h-4" />
                 Back to Blog
               </Link>
-              <Button size="sm" variant="ghost" className="text-white/80 hover:text-white">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-white/80 hover:text-white"
+                onClick={handleShare}
+                aria-label="Share this article"
+              >
                 <Share2 className="w-4 h-4" />
               </Button>
             </div>
@@ -147,12 +180,20 @@ export default function BlogPostClient({ post }: { post: Post | null }) {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Button size="sm" variant="ghost" className="text-white/80 hover:text-white">
-                  <Linkedin className="w-4 h-4" />
-                </Button>
-                <Button size="sm" variant="ghost" className="text-white/80 hover:text-white">
-                  <Twitter className="w-4 h-4" />
-                </Button>
+                {linkedinShare && (
+                  <Button asChild size="sm" variant="ghost" className="text-white/80 hover:text-white">
+                    <a href={linkedinShare} target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn">
+                      <Linkedin className="w-4 h-4" />
+                    </a>
+                  </Button>
+                )}
+                {xShare && (
+                  <Button asChild size="sm" variant="ghost" className="text-white/80 hover:text-white">
+                    <a href={xShare} target="_blank" rel="noopener noreferrer" aria-label="Share on X">
+                      <Twitter className="w-4 h-4" />
+                    </a>
+                  </Button>
+                )}
               </div>
             </div>
           </div>

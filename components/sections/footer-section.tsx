@@ -31,10 +31,15 @@ export default function FooterSection({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-1">
-            <h3 className="text-lg font-bold text-white">Kejsan</h3>
+            <h3 className="text-lg font-bold text-white">{settings.brandName || "Kejsan"}</h3>
             <p className="mt-2 text-sm text-slate-400">
-              Digital Marketing Specialist
+              {settings.brandRole || "Digital Marketing Specialist"}
             </p>
+            {settings.brandDescription && (
+              <p className="mt-3 text-sm text-slate-400/90 max-w-sm">
+                {settings.brandDescription}
+              </p>
+            )}
             <div className="flex space-x-4 mt-4">
               {settings.linkedin && (
                 <a
@@ -56,9 +61,9 @@ export default function FooterSection({
                   <Github size={20} />
                 </a>
               )}
-              {settings.twitter && (
+              {settings.x && (
                 <a
-                  href={settings.twitter}
+                  href={settings.x}
                   target="_blank"
                   rel="noreferrer noopener"
                   className="text-slate-400 hover:text-white"
@@ -118,18 +123,23 @@ export default function FooterSection({
               Connect
             </h3>
             <p className="mt-4 text-sm text-slate-400">
-              Interested in working together?
+              {settings.footerTagline || "Interested in working together?"}
             </p>
-            <a
-              href="/#contact"
-              className="mt-2 inline-block text-sm text-[#54a09b] hover:text-[#54a09b]/90 font-semibold"
-            >
-              Get in touch
-            </a>
+            {(settings.footerCtaHref || settings.contactCtaHref) && (
+              <a
+                href={settings.footerCtaHref || settings.contactCtaHref || "#contact"}
+                className="mt-2 inline-block text-sm text-[#54a09b] hover:text-[#54a09b]/90 font-semibold"
+              >
+                {settings.footerCtaLabel || settings.contactCtaLabel || "Get in touch"}
+              </a>
+            )}
           </div>
         </div>
         <div className="mt-12 border-t border-white/10 pt-8 text-center text-sm text-slate-400">
-          <p>{settings.copyright || "© 2024 Kejsan. All rights reserved."}</p>
+          <div className="space-y-2">
+            <p>{settings.copyright || "© 2024 Kejsan. All rights reserved."}</p>
+            {settings.footerNote && <p className="text-xs text-slate-500">{settings.footerNote}</p>}
+          </div>
         </div>
       </div>
     </footer>

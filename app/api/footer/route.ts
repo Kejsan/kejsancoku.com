@@ -1,44 +1,31 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
+import { sanitizeSiteSettingsPayload, toSiteSettingsResponse } from '@/lib/site-settings'
 import { Prisma } from '@prisma/client'
-
-function normalizeSiteSettingsPayload<T extends Record<string, any>>(payload: T): T {
-  const normalized: Record<string, any> = { ...payload }
-  const email = normalized.email
-  if (typeof email === 'string') {
-    const sanitized = email.replace(/^mailto:/i, '').trim()
-    if (sanitized) {
-      normalized.email = sanitized
-    } else {
-      normalized.email = null
-    }
-  }
-  return normalized as T
-}
 
 export async function GET() {
   if (!prisma) {
     console.warn('Prisma client unavailable for footer GET request.')
-    return NextResponse.json(null, { status: 503 })
+    return NextResponse.json(toSiteSettingsResponse(null), { status: 503 })
   }
   try {
     const settings = await prisma.siteSettings.findFirst()
-    return NextResponse.json(settings)
+    return NextResponse.json(toSiteSettingsResponse(settings))
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       ['P2021', 'P2022'].includes(error.code)
     ) {
       console.error('Failed to load site settings in footer API:', error)
-      return NextResponse.json(null)
+      return NextResponse.json(toSiteSettingsResponse(null))
     }
     if (error instanceof Prisma.PrismaClientInitializationError) {
       console.error(
         'Prisma initialization error while loading site settings in footer API:',
         error,
       )
-      return NextResponse.json(null)
+      return NextResponse.json(toSiteSettingsResponse(null))
     }
     throw error
   }
@@ -56,20 +43,22 @@ export async function POST(request: Request) {
     )
   }
   const payload = await request.json()
-  const { id: _ignoredId, ...rawData } = payload
-  const data = normalizeSiteSettingsPayload(rawData)
+  const { id: _ignoredId, createdAt: _ignoredCreatedAt, updatedAt: _ignoredUpdatedAt, ...rawData } = payload
+  const sanitized = sanitizeSiteSettingsPayload(rawData)
+  const updateData = sanitized as Prisma.SiteSettingsUpdateInput
+  const createData = sanitized as Prisma.SiteSettingsCreateInput
   try {
     const settings = await prisma.$transaction(async (tx) => {
       const existing = await tx.siteSettings.findFirst()
       if (existing) {
         return tx.siteSettings.update({
           where: { id: existing.id },
-          data,
+          data: updateData,
         })
       }
-      return tx.siteSettings.create({ data })
+      return tx.siteSettings.create({ data: createData })
     })
-    return NextResponse.json(settings)
+    return NextResponse.json(toSiteSettingsResponse(settings))
   } catch (error) {
     console.error('Failed to persist site settings in footer POST API:', error)
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -91,20 +80,22 @@ export async function PUT(request: Request) {
     )
   }
   const payload = await request.json()
-  const { id: _ignoredId, ...rawData } = payload
-  const data = normalizeSiteSettingsPayload(rawData)
+  const { id: _ignoredId, createdAt: _ignoredCreatedAt, updatedAt: _ignoredUpdatedAt, ...rawData } = payload
+  const sanitized = sanitizeSiteSettingsPayload(rawData)
+  const updateData = sanitized as Prisma.SiteSettingsUpdateInput
+  const createData = sanitized as Prisma.SiteSettingsCreateInput
   try {
     const settings = await prisma.$transaction(async (tx) => {
       const existing = await tx.siteSettings.findFirst()
       if (existing) {
         return tx.siteSettings.update({
           where: { id: existing.id },
-          data,
+          data: updateData,
         })
       }
-      return tx.siteSettings.create({ data })
+      return tx.siteSettings.create({ data: createData })
     })
-    return NextResponse.json(settings)
+    return NextResponse.json(toSiteSettingsResponse(settings))
   } catch (error) {
     console.error('Failed to persist site settings in footer PUT API:', error)
     if (error instanceof Prisma.PrismaClientKnownRequestError) {

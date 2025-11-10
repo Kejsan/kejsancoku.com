@@ -344,11 +344,25 @@ async function main() {
     where: { id: 1 },
     update: {},
     create: {
-      copyright: "© 2024 Kejsan. All rights reserved.",
+      brandName: "Kejsan",
+      brandRole: "Digital Marketing Specialist",
+      brandDescription:
+        "Growth-focused marketer helping SaaS and e-commerce teams scale SEO, content, and product marketing with measurable results.",
       linkedin: "https://www.linkedin.com/in/kejsan/",
       github: "https://github.com/kejsan",
-      twitter: "https://twitter.com/kejsan",
+      x: "https://x.com/kejsan",
       email: "kejsancoku@gmail.com",
+      contactHeadline: "Let's Grow Your Digital Presence",
+      contactDescription:
+        "Ready to scale your brand's digital presence? I specialize in SEO strategy, content marketing, and growth-driven campaigns that deliver measurable results.",
+      contactLocation: "Pristina, Kosovo",
+      contactAvailability: "Available for new projects",
+      contactCtaLabel: "Email Me",
+      footerTagline: "Interested in working together?",
+      footerCtaLabel: "Get in touch",
+      footerCtaHref: "/#contact",
+      footerNote: "Crafted with strategy-first marketing principles.",
+      copyright: "© 2024 Kejsan. All rights reserved.",
     },
   })
   console.log("Seeded site settings.")

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { Mail, Linkedin, Github, Twitter, Link as LinkIcon } from "lucide-react"
+import { Mail, Linkedin, Github, Twitter, Link as LinkIcon, MapPin, Clock } from "lucide-react"
 import type { SiteSettings } from "@prisma/client"
 
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,7 @@ interface ContactSectionProps {
 }
 
 const SOCIAL_LINKS: Record<
-  keyof Pick<SiteSettings, "linkedin" | "github" | "twitter" | "threads">,
+  keyof Pick<SiteSettings, "linkedin" | "github" | "x" | "threads">,
   {
     label: string
     icon: LucideIcon
@@ -25,8 +25,8 @@ const SOCIAL_LINKS: Record<
     label: "GitHub",
     icon: Github,
   },
-  twitter: {
-    label: "Twitter",
+  x: {
+    label: "X",
     icon: Twitter,
   },
   threads: {
@@ -70,6 +70,14 @@ export default function ContactSection({ settings, isLoading = false, error = nu
   }
 
   const emailHref = settings?.email ? `mailto:${settings.email}` : null
+  const headline = settings?.contactHeadline || "Let's Grow Your Digital Presence"
+  const description =
+    settings?.contactDescription ||
+    "Ready to scale your brand's digital presence? I specialize in SEO strategy, content marketing, and growth-driven campaigns that deliver measurable results."
+  const location = settings?.contactLocation
+  const availability = settings?.contactAvailability
+  const ctaLabel = settings?.contactCtaLabel || (emailHref ? "Email Me" : "Get in Touch")
+  const ctaHref = settings?.contactCtaHref || (emailHref ?? undefined)
 
   const availableSocialLinks = (Object.keys(SOCIAL_LINKS) as (keyof typeof SOCIAL_LINKS)[])
     .map((key) => {
@@ -88,17 +96,37 @@ export default function ContactSection({ settings, isLoading = false, error = nu
   return (
     <section id="contact" className="py-20 px-4">
       <div className="max-w-4xl mx-auto text-center">
-        <h2 className="text-4xl font-bold text-white mb-8">Let&apos;s Grow Your Digital Presence</h2>
-        <p className="text-white/80 text-lg mb-12">
-          Ready to scale your brand&apos;s digital presence? I specialize in SEO strategy, content marketing, and
-          growth-driven campaigns that deliver measurable results. Let&apos;s discuss your next project.
-        </p>
+        <h2 className="text-4xl font-bold text-white mb-8">{headline}</h2>
+        <p className="text-white/80 text-lg mb-12">{description}</p>
+        {(location || availability) && (
+          <div className="flex flex-wrap items-center justify-center gap-6 text-white/70 text-sm mb-8">
+            {location && (
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                <span>{location}</span>
+              </div>
+            )}
+            {availability && (
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                <span>{availability}</span>
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex flex-wrap justify-center gap-6">
-          {emailHref ? (
+          {ctaHref ? (
+            <a href={ctaHref} target={ctaHref.startsWith("mailto:") ? "_self" : "_blank"} rel="noopener noreferrer">
+              <Button size="lg" className="bg-[#fb6163] hover:bg-[#fb6163]/90 text-white">
+                <Mail className="w-5 h-5 mr-2" />
+                {ctaLabel}
+              </Button>
+            </a>
+          ) : emailHref ? (
             <a href={emailHref}>
               <Button size="lg" className="bg-[#fb6163] hover:bg-[#fb6163]/90 text-white">
                 <Mail className="w-5 h-5 mr-2" />
-                Email Me
+                {ctaLabel}
               </Button>
             </a>
           ) : (
