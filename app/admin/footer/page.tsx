@@ -122,19 +122,21 @@ export default function FooterPage() {
   }, [lastUpdated])
 
   const onSubmit = (values: FooterFormValues) => {
-    startTransition(async () => {
-      try {
-        const result = await saveFooterSettings(values)
-        const updatedValues = formatSiteSettingsForForm(result.settings)
-        form.reset(updatedValues, { keepDirty: false })
-        setLastSavedValues(updatedValues)
-        setLastUpdated(result.lastUpdated)
-        toast.success("Footer settings saved")
-      } catch (err) {
-        console.error("Failed to save footer settings", err)
-        const message = err instanceof Error ? err.message : "Unable to save footer settings"
-        toast.error(message)
-      }
+    startTransition(() => {
+      void (async () => {
+        try {
+          const result = await saveFooterSettings(values)
+          const updatedValues = formatSiteSettingsForForm(result.settings)
+          form.reset(updatedValues, { keepDirty: false })
+          setLastSavedValues(updatedValues)
+          setLastUpdated(result.lastUpdated)
+          toast.success("Footer settings saved")
+        } catch (err) {
+          console.error("Failed to save footer settings", err)
+          const message = err instanceof Error ? err.message : "Unable to save footer settings"
+          toast.error(message)
+        }
+      })()
     })
   }
 
