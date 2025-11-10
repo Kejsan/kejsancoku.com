@@ -14,6 +14,7 @@ import {
 import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
 import type { SiteSettings } from "@prisma/client"
+import type { SiteSettingsResponse } from "@/types/site-settings"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -96,7 +97,7 @@ export default function WorkSamples() {
   useEffect(() => {
     fetch("/api/footer")
       .then((res) => res.json())
-      .then((data: SiteSettings | null) => setSettings(data))
+      .then((payload: SiteSettingsResponse) => setSettings(payload.settings))
       .catch((error) => {
         console.error("Failed to load footer settings", error)
       })
@@ -169,7 +170,7 @@ export default function WorkSamples() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <Link href="/" className="text-white font-bold text-xl">
-              Kejsan
+              {settings?.brandName || "Kejsan"}
             </Link>
             <Link href="/" className="text-white/80 hover:text-white transition-colors flex items-center gap-2">
               <ArrowLeft className="w-4 h-4" />

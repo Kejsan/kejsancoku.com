@@ -49,15 +49,28 @@ model WebApp {
 }
 
 model SiteSettings {
-  id        Int      @id @default(autoincrement())
-  copyright String?
-  linkedin  String?
-  github    String?
-  twitter   String?
-  threads   String?
-  email     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  Int      @id @default(autoincrement())
+  brandName           String?
+  brandRole           String?
+  brandDescription    String?
+  copyright           String?
+  footerTagline       String?
+  footerNote          String?
+  footerCtaLabel      String?
+  footerCtaHref       String?
+  linkedin            String?
+  github              String?
+  x                   String?
+  threads             String?
+  email               String?
+  contactHeadline     String?
+  contactDescription  String?
+  contactLocation     String?
+  contactAvailability String?
+  contactCtaLabel     String?
+  contactCtaHref      String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model Tool {

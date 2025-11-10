@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { ChevronUp } from "lucide-react"
 import type { SiteSettings } from "@prisma/client"
+import type { SiteSettingsResponse } from "@/types/site-settings"
 import { NAV_LINKS } from "@/lib/navigation-links"
 
 import HeroSection from "@/components/sections/hero-section"
@@ -160,13 +161,13 @@ export default function Portfolio() {
           throw new Error(`Failed to fetch footer settings: ${response.status}`)
         }
 
-        const data: SiteSettings | null = await response.json()
+        const payload: SiteSettingsResponse = await response.json()
 
         if (!isMounted) {
           return
         }
 
-        setSettings(data)
+        setSettings(payload.settings)
         setSettingsError(null)
       } catch (error) {
         console.error("Failed to load footer settings", error)
@@ -210,7 +211,7 @@ export default function Portfolio() {
       <nav className="fixed top-0 w-full z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="text-white font-bold text-xl">Kejsan</div>
+            <div className="text-white font-bold text-xl">{settings?.brandName || "Kejsan"}</div>
             <div className="hidden md:flex space-x-8">
               {NAV_LINKS.map((link) => {
                 if (link.href.startsWith("/#")) {
