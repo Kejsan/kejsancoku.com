@@ -109,23 +109,25 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
       setExperiences(optimistic)
       experiencesRef.current = optimistic
 
-      startTransition(async () => {
-        const result = await createExperience(parsed.data)
-        if (!result.ok) {
-          setExperiences(snapshot)
-          experiencesRef.current = snapshot
-          toast.error(result.message)
-          return
-        }
+      startTransition(() => {
+        void (async () => {
+          const result = await createExperience(parsed.data)
+          if (!result.ok) {
+            setExperiences(snapshot)
+            experiencesRef.current = snapshot
+            toast.error(result.message)
+            return
+          }
 
-        setExperiences((current) => {
-          const withoutPlaceholder = current.filter((exp) => exp.id !== placeholder.id)
-          const next = [result.data, ...withoutPlaceholder]
-          experiencesRef.current = next
-          return next
-        })
-        toast.success("Experience created")
-        closeDrawer()
+          setExperiences((current) => {
+            const withoutPlaceholder = current.filter((exp) => exp.id !== placeholder.id)
+            const next = [result.data, ...withoutPlaceholder]
+            experiencesRef.current = next
+            return next
+          })
+          toast.success("Experience created")
+          closeDrawer()
+        })()
       })
     },
     [closeDrawer, startTransition],
@@ -157,22 +159,24 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
       setExperiences(optimistic)
       experiencesRef.current = optimistic
 
-      startTransition(async () => {
-        const result = await updateExperience(drawerState.experience!.id, parsed.data)
-        if (!result.ok) {
-          setExperiences(snapshot)
-          experiencesRef.current = snapshot
-          toast.error(result.message)
-          return
-        }
+      startTransition(() => {
+        void (async () => {
+          const result = await updateExperience(drawerState.experience!.id, parsed.data)
+          if (!result.ok) {
+            setExperiences(snapshot)
+            experiencesRef.current = snapshot
+            toast.error(result.message)
+            return
+          }
 
-        setExperiences((current) => {
-          const next = current.map((experience) => (experience.id === result.data.id ? result.data : experience))
-          experiencesRef.current = next
-          return next
-        })
-        toast.success("Experience updated")
-        closeDrawer()
+          setExperiences((current) => {
+            const next = current.map((experience) => (experience.id === result.data.id ? result.data : experience))
+            experiencesRef.current = next
+            return next
+          })
+          toast.success("Experience updated")
+          closeDrawer()
+        })()
       })
     },
     [drawerState?.experience, closeDrawer, startTransition],
@@ -194,16 +198,18 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
     setExperiences(remaining)
     experiencesRef.current = remaining
 
-    startTransition(async () => {
-      const result = await deleteExperience(deleteTarget.id)
-      if (!result.ok) {
-        setExperiences(snapshot)
-        experiencesRef.current = snapshot
-        toast.error(result.message)
-        return
-      }
-      toast.success("Experience deleted")
-      setDeleteTarget(null)
+    startTransition(() => {
+      void (async () => {
+        const result = await deleteExperience(deleteTarget.id)
+        if (!result.ok) {
+          setExperiences(snapshot)
+          experiencesRef.current = snapshot
+          toast.error(result.message)
+          return
+        }
+        toast.success("Experience deleted")
+        setDeleteTarget(null)
+      })()
     })
   }, [deleteTarget, startTransition])
 
@@ -215,40 +221,44 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
     setExperiences(remaining)
     experiencesRef.current = remaining
 
-    startBulkTransition(async () => {
-      const result = await bulkDeleteExperiences(ids)
-      if (!result.ok) {
-        setExperiences(snapshot)
-        experiencesRef.current = snapshot
-        toast.error(result.message)
-        return
-      }
+    startBulkTransition(() => {
+      void (async () => {
+        const result = await bulkDeleteExperiences(ids)
+        if (!result.ok) {
+          setExperiences(snapshot)
+          experiencesRef.current = snapshot
+          toast.error(result.message)
+          return
+        }
 
-      toast.success(
-        result.data.count > 0
-          ? `Deleted ${result.data.count} ${result.data.count === 1 ? "experience" : "experiences"}`
-          : "No experiences deleted",
-      )
-      bulkDeleteState.clearSelection()
-      setBulkDeleteState(null)
+        toast.success(
+          result.data.count > 0
+            ? `Deleted ${result.data.count} ${result.data.count === 1 ? "experience" : "experiences"}`
+            : "No experiences deleted",
+        )
+        bulkDeleteState.clearSelection()
+        setBulkDeleteState(null)
+      })()
     })
   }, [bulkDeleteState, startBulkTransition])
 
   const handleQuickDuplicate = React.useCallback(
     (experience: ExperienceRow) => {
-      startQuickTransition(async () => {
-        const result = await duplicateExperience(experience.id)
-        if (!result.ok) {
-          toast.error(result.message)
-          return
-        }
+      startQuickTransition(() => {
+        void (async () => {
+          const result = await duplicateExperience(experience.id)
+          if (!result.ok) {
+            toast.error(result.message)
+            return
+          }
 
-        setExperiences((current) => {
-          const next = [result.data, ...current]
-          experiencesRef.current = next
-          return next
-        })
-        toast.success("Experience duplicated")
+          setExperiences((current) => {
+            const next = [result.data, ...current]
+            experiencesRef.current = next
+            return next
+          })
+          toast.success("Experience duplicated")
+        })()
       })
     },
     [startQuickTransition],

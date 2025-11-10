@@ -100,23 +100,25 @@ export function AppsShell({ initialApps }: AppsShellProps) {
       setApps(optimistic)
       appsRef.current = optimistic
 
-      startTransition(async () => {
-        const result = await createWebApp(parsed.data)
-        if (!result.ok) {
-          setApps(snapshot)
-          appsRef.current = snapshot
-          toast.error(result.message)
-          return
-        }
+      startTransition(() => {
+        void (async () => {
+          const result = await createWebApp(parsed.data)
+          if (!result.ok) {
+            setApps(snapshot)
+            appsRef.current = snapshot
+            toast.error(result.message)
+            return
+          }
 
-        setApps((current) => {
-          const withoutPlaceholder = current.filter((app) => app.id !== placeholder.id)
-          const next = [result.data, ...withoutPlaceholder]
-          appsRef.current = next
-          return next
-        })
-        toast.success("App created")
-        closeDrawer()
+          setApps((current) => {
+            const withoutPlaceholder = current.filter((app) => app.id !== placeholder.id)
+            const next = [result.data, ...withoutPlaceholder]
+            appsRef.current = next
+            return next
+          })
+          toast.success("App created")
+          closeDrawer()
+        })()
       })
     },
     [closeDrawer, startTransition],
@@ -146,22 +148,24 @@ export function AppsShell({ initialApps }: AppsShellProps) {
       setApps(optimistic)
       appsRef.current = optimistic
 
-      startTransition(async () => {
-        const result = await updateWebApp(drawerState.app!.id, parsed.data)
-        if (!result.ok) {
-          setApps(snapshot)
-          appsRef.current = snapshot
-          toast.error(result.message)
-          return
-        }
+      startTransition(() => {
+        void (async () => {
+          const result = await updateWebApp(drawerState.app!.id, parsed.data)
+          if (!result.ok) {
+            setApps(snapshot)
+            appsRef.current = snapshot
+            toast.error(result.message)
+            return
+          }
 
-        setApps((current) => {
-          const next = current.map((app) => (app.id === result.data.id ? result.data : app))
-          appsRef.current = next
-          return next
-        })
-        toast.success("App updated")
-        closeDrawer()
+          setApps((current) => {
+            const next = current.map((app) => (app.id === result.data.id ? result.data : app))
+            appsRef.current = next
+            return next
+          })
+          toast.success("App updated")
+          closeDrawer()
+        })()
       })
     },
     [drawerState?.app, closeDrawer, startTransition],
@@ -183,16 +187,18 @@ export function AppsShell({ initialApps }: AppsShellProps) {
     setApps(remaining)
     appsRef.current = remaining
 
-    startTransition(async () => {
-      const result = await deleteWebApp(deleteTarget.id)
-      if (!result.ok) {
-        setApps(snapshot)
-        appsRef.current = snapshot
-        toast.error(result.message)
-        return
-      }
-      toast.success("App deleted")
-      setDeleteTarget(null)
+    startTransition(() => {
+      void (async () => {
+        const result = await deleteWebApp(deleteTarget.id)
+        if (!result.ok) {
+          setApps(snapshot)
+          appsRef.current = snapshot
+          toast.error(result.message)
+          return
+        }
+        toast.success("App deleted")
+        setDeleteTarget(null)
+      })()
     })
   }, [deleteTarget, startTransition])
 
@@ -204,40 +210,44 @@ export function AppsShell({ initialApps }: AppsShellProps) {
     setApps(remaining)
     appsRef.current = remaining
 
-    startBulkTransition(async () => {
-      const result = await bulkDeleteWebApps(ids)
-      if (!result.ok) {
-        setApps(snapshot)
-        appsRef.current = snapshot
-        toast.error(result.message)
-        return
-      }
+    startBulkTransition(() => {
+      void (async () => {
+        const result = await bulkDeleteWebApps(ids)
+        if (!result.ok) {
+          setApps(snapshot)
+          appsRef.current = snapshot
+          toast.error(result.message)
+          return
+        }
 
-      toast.success(
-        result.data.count > 0
-          ? `Deleted ${result.data.count} ${result.data.count === 1 ? "app" : "apps"}`
-          : "No apps deleted",
-      )
-      bulkDeleteState.clearSelection()
-      setBulkDeleteState(null)
+        toast.success(
+          result.data.count > 0
+            ? `Deleted ${result.data.count} ${result.data.count === 1 ? "app" : "apps"}`
+            : "No apps deleted",
+        )
+        bulkDeleteState.clearSelection()
+        setBulkDeleteState(null)
+      })()
     })
   }, [bulkDeleteState, startBulkTransition])
 
   const handleQuickDuplicate = React.useCallback(
     (app: AppRow) => {
-      startQuickTransition(async () => {
-        const result = await duplicateWebApp(app.id)
-        if (!result.ok) {
-          toast.error(result.message)
-          return
-        }
+      startQuickTransition(() => {
+        void (async () => {
+          const result = await duplicateWebApp(app.id)
+          if (!result.ok) {
+            toast.error(result.message)
+            return
+          }
 
-        setApps((current) => {
-          const next = [result.data, ...current]
-          appsRef.current = next
-          return next
-        })
-        toast.success("App duplicated")
+          setApps((current) => {
+            const next = [result.data, ...current]
+            appsRef.current = next
+            return next
+          })
+          toast.success("App duplicated")
+        })()
       })
     },
     [startQuickTransition],

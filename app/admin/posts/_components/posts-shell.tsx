@@ -116,23 +116,25 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
       setPosts(optimistic)
       postsRef.current = optimistic
 
-      startTransition(async () => {
-        const result = await createPost(parsed.data)
-        if (!result.ok) {
-          setPosts(snapshot)
-          postsRef.current = snapshot
-          toast.error(result.message)
-          return
-        }
+      startTransition(() => {
+        void (async () => {
+          const result = await createPost(parsed.data)
+          if (!result.ok) {
+            setPosts(snapshot)
+            postsRef.current = snapshot
+            toast.error(result.message)
+            return
+          }
 
-        setPosts((current) => {
-          const withoutPlaceholder = current.filter((post) => post.slug !== placeholder.slug)
-          const next = [result.data, ...withoutPlaceholder]
-          postsRef.current = next
-          return next
-        })
-        toast.success("Post created")
-        closeDrawer()
+          setPosts((current) => {
+            const withoutPlaceholder = current.filter((post) => post.slug !== placeholder.slug)
+            const next = [result.data, ...withoutPlaceholder]
+            postsRef.current = next
+            return next
+          })
+          toast.success("Post created")
+          closeDrawer()
+        })()
       })
     },
     [closeDrawer, startTransition],
@@ -166,22 +168,24 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
       setPosts(optimistic)
       postsRef.current = optimistic
 
-      startTransition(async () => {
-        const result = await updatePost(drawerState.post!.slug, parsed.data)
-        if (!result.ok) {
-          setPosts(snapshot)
-          postsRef.current = snapshot
-          toast.error(result.message)
-          return
-        }
+      startTransition(() => {
+        void (async () => {
+          const result = await updatePost(drawerState.post!.slug, parsed.data)
+          if (!result.ok) {
+            setPosts(snapshot)
+            postsRef.current = snapshot
+            toast.error(result.message)
+            return
+          }
 
-        setPosts((current) => {
-          const next = current.map((post) => (post.id === result.data.id ? result.data : post))
-          postsRef.current = next
-          return next
-        })
-        toast.success("Post updated")
-        closeDrawer()
+          setPosts((current) => {
+            const next = current.map((post) => (post.id === result.data.id ? result.data : post))
+            postsRef.current = next
+            return next
+          })
+          toast.success("Post updated")
+          closeDrawer()
+        })()
       })
     },
     [drawerState?.post, closeDrawer, startTransition],
@@ -208,17 +212,19 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
     setPosts(remaining)
     postsRef.current = remaining
 
-    startTransition(async () => {
-      const result = await deletePost(deleteTarget.slug)
-      if (!result.ok) {
-        setPosts(snapshot)
-        postsRef.current = snapshot
-        toast.error(result.message)
-        return
-      }
+    startTransition(() => {
+      void (async () => {
+        const result = await deletePost(deleteTarget.slug)
+        if (!result.ok) {
+          setPosts(snapshot)
+          postsRef.current = snapshot
+          toast.error(result.message)
+          return
+        }
 
-      toast.success("Post deleted")
-      setDeleteTarget(null)
+        toast.success("Post deleted")
+        setDeleteTarget(null)
+      })()
     })
   }, [deleteTarget, startTransition])
 
@@ -230,40 +236,44 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
     setPosts(remaining)
     postsRef.current = remaining
 
-    startBulkTransition(async () => {
-      const result = await bulkDeletePosts(bulkDeleteState.rows.map((row) => row.slug))
-      if (!result.ok) {
-        setPosts(snapshot)
-        postsRef.current = snapshot
-        toast.error(result.message)
-        return
-      }
+    startBulkTransition(() => {
+      void (async () => {
+        const result = await bulkDeletePosts(bulkDeleteState.rows.map((row) => row.slug))
+        if (!result.ok) {
+          setPosts(snapshot)
+          postsRef.current = snapshot
+          toast.error(result.message)
+          return
+        }
 
-      toast.success(
-        result.data.count > 0
-          ? `Deleted ${result.data.count} ${result.data.count === 1 ? "post" : "posts"}`
-          : "No posts deleted",
-      )
-      bulkDeleteState.clearSelection()
-      setBulkDeleteState(null)
+        toast.success(
+          result.data.count > 0
+            ? `Deleted ${result.data.count} ${result.data.count === 1 ? "post" : "posts"}`
+            : "No posts deleted",
+        )
+        bulkDeleteState.clearSelection()
+        setBulkDeleteState(null)
+      })()
     })
   }, [bulkDeleteState, startBulkTransition])
 
   const handleQuickDuplicate = React.useCallback(
     (post: PostRow) => {
-      startQuickTransition(async () => {
-        const result = await duplicatePost(post.slug)
-        if (!result.ok) {
-          toast.error(result.message)
-          return
-        }
+      startQuickTransition(() => {
+        void (async () => {
+          const result = await duplicatePost(post.slug)
+          if (!result.ok) {
+            toast.error(result.message)
+            return
+          }
 
-        setPosts((current) => {
-          const next = [result.data, ...current]
-          postsRef.current = next
-          return next
-        })
-        toast.success("Post duplicated")
+          setPosts((current) => {
+            const next = [result.data, ...current]
+            postsRef.current = next
+            return next
+          })
+          toast.success("Post duplicated")
+        })()
       })
     },
     [startQuickTransition],

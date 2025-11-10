@@ -100,23 +100,25 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
       setSamples(optimistic)
       samplesRef.current = optimistic
 
-      startTransition(async () => {
-        const result = await createWorkSample(parsed.data)
-        if (!result.ok) {
-          setSamples(snapshot)
-          samplesRef.current = snapshot
-          toast.error(result.message)
-          return
-        }
+      startTransition(() => {
+        void (async () => {
+          const result = await createWorkSample(parsed.data)
+          if (!result.ok) {
+            setSamples(snapshot)
+            samplesRef.current = snapshot
+            toast.error(result.message)
+            return
+          }
 
-        setSamples((current) => {
-          const withoutPlaceholder = current.filter((sample) => sample.id !== placeholder.id)
-          const next = [result.data, ...withoutPlaceholder]
-          samplesRef.current = next
-          return next
-        })
-        toast.success("Work sample created")
-        closeDrawer()
+          setSamples((current) => {
+            const withoutPlaceholder = current.filter((sample) => sample.id !== placeholder.id)
+            const next = [result.data, ...withoutPlaceholder]
+            samplesRef.current = next
+            return next
+          })
+          toast.success("Work sample created")
+          closeDrawer()
+        })()
       })
     },
     [closeDrawer, startTransition],
@@ -146,22 +148,24 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
       setSamples(optimistic)
       samplesRef.current = optimistic
 
-      startTransition(async () => {
-        const result = await updateWorkSample(drawerState.sample!.id, parsed.data)
-        if (!result.ok) {
-          setSamples(snapshot)
-          samplesRef.current = snapshot
-          toast.error(result.message)
-          return
-        }
+      startTransition(() => {
+        void (async () => {
+          const result = await updateWorkSample(drawerState.sample!.id, parsed.data)
+          if (!result.ok) {
+            setSamples(snapshot)
+            samplesRef.current = snapshot
+            toast.error(result.message)
+            return
+          }
 
-        setSamples((current) => {
-          const next = current.map((sample) => (sample.id === result.data.id ? result.data : sample))
-          samplesRef.current = next
-          return next
-        })
-        toast.success("Work sample updated")
-        closeDrawer()
+          setSamples((current) => {
+            const next = current.map((sample) => (sample.id === result.data.id ? result.data : sample))
+            samplesRef.current = next
+            return next
+          })
+          toast.success("Work sample updated")
+          closeDrawer()
+        })()
       })
     },
     [drawerState?.sample, closeDrawer, startTransition],
@@ -183,16 +187,18 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
     setSamples(remaining)
     samplesRef.current = remaining
 
-    startTransition(async () => {
-      const result = await deleteWorkSample(deleteTarget.id)
-      if (!result.ok) {
-        setSamples(snapshot)
-        samplesRef.current = snapshot
-        toast.error(result.message)
-        return
-      }
-      toast.success("Work sample deleted")
-      setDeleteTarget(null)
+    startTransition(() => {
+      void (async () => {
+        const result = await deleteWorkSample(deleteTarget.id)
+        if (!result.ok) {
+          setSamples(snapshot)
+          samplesRef.current = snapshot
+          toast.error(result.message)
+          return
+        }
+        toast.success("Work sample deleted")
+        setDeleteTarget(null)
+      })()
     })
   }, [deleteTarget, startTransition])
 
@@ -204,40 +210,44 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
     setSamples(remaining)
     samplesRef.current = remaining
 
-    startBulkTransition(async () => {
-      const result = await bulkDeleteWorkSamples(ids)
-      if (!result.ok) {
-        setSamples(snapshot)
-        samplesRef.current = snapshot
-        toast.error(result.message)
-        return
-      }
+    startBulkTransition(() => {
+      void (async () => {
+        const result = await bulkDeleteWorkSamples(ids)
+        if (!result.ok) {
+          setSamples(snapshot)
+          samplesRef.current = snapshot
+          toast.error(result.message)
+          return
+        }
 
-      toast.success(
-        result.data.count > 0
-          ? `Deleted ${result.data.count} ${result.data.count === 1 ? "sample" : "samples"}`
-          : "No samples deleted",
-      )
-      bulkDeleteState.clearSelection()
-      setBulkDeleteState(null)
+        toast.success(
+          result.data.count > 0
+            ? `Deleted ${result.data.count} ${result.data.count === 1 ? "sample" : "samples"}`
+            : "No samples deleted",
+        )
+        bulkDeleteState.clearSelection()
+        setBulkDeleteState(null)
+      })()
     })
   }, [bulkDeleteState, startBulkTransition])
 
   const handleQuickDuplicate = React.useCallback(
     (sample: WorkSampleRow) => {
-      startQuickTransition(async () => {
-        const result = await duplicateWorkSample(sample.id)
-        if (!result.ok) {
-          toast.error(result.message)
-          return
-        }
+      startQuickTransition(() => {
+        void (async () => {
+          const result = await duplicateWorkSample(sample.id)
+          if (!result.ok) {
+            toast.error(result.message)
+            return
+          }
 
-        setSamples((current) => {
-          const next = [result.data, ...current]
-          samplesRef.current = next
-          return next
-        })
-        toast.success("Work sample duplicated")
+          setSamples((current) => {
+            const next = [result.data, ...current]
+            samplesRef.current = next
+            return next
+          })
+          toast.success("Work sample duplicated")
+        })()
       })
     },
     [startQuickTransition],
