@@ -92,8 +92,19 @@ export function PostFormDrawer({
     }
   }, [open, defaultValues, form])
 
+  function normalizeDateTime(value?: string | null) {
+    if (!value) return undefined
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.valueOf())) return undefined
+    return parsed.toISOString()
+  }
+
   function handleSubmit(values: PostFormValues) {
-    onSubmit(values)
+    onSubmit({
+      ...values,
+      scheduledAt: normalizeDateTime(values.scheduledAt),
+      publishedAt: normalizeDateTime(values.publishedAt),
+    })
   }
 
   const copy = modeCopy[mode]
