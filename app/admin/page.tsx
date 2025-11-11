@@ -139,66 +139,119 @@ async function getAuditEntries(): Promise<AuditEntry[]> {
   }
 }
 
+const EMPTY_STATS: DashboardStat[] = [
+  {
+    key: "posts",
+    title: "Posts",
+    href: "/admin/posts",
+    count: 0,
+    description: "You have 0 published posts.",
+    emptyDescription: "Share your expertise by publishing your first post.",
+    actionLabel: "Create post",
+  },
+  {
+    key: "apps",
+    title: "Apps",
+    href: "/admin/apps",
+    count: 0,
+    description: "0 apps showcased on your site.",
+    emptyDescription: "Highlight your standout apps to engage visitors.",
+    actionLabel: "Create app",
+  },
+  {
+    key: "tools",
+    title: "Tools",
+    href: "/admin/tools",
+    count: 0,
+    description: "0 tools documented in your stack.",
+    emptyDescription: "Document the tools you rely on to build trust.",
+    actionLabel: "Create tool",
+  },
+  {
+    key: "experiences",
+    title: "Experiences",
+    href: "/admin/experiences",
+    count: 0,
+    description: "0 experiences shaping your story.",
+    emptyDescription: "Add career milestones to tell your professional story.",
+    actionLabel: "Create experience",
+  },
+  {
+    key: "work-samples",
+    title: "Work samples",
+    href: "/admin/worksamples",
+    count: 0,
+    description: "0 work samples published.",
+    emptyDescription: "Showcase the projects you are proud of.",
+    actionLabel: "Create sample",
+  },
+]
+
 async function getDashboardStats(): Promise<DashboardStat[]> {
   if (!prisma) {
-    throw new Error("Prisma client not initialized")
+    return EMPTY_STATS
   }
 
-  const [posts, apps, tools, experiences, workSamples] = await Promise.all([
-    prisma.post.count(),
-    prisma.webApp.count(),
-    prisma.tool.count(),
-    prisma.experience.count(),
-    prisma.workSample.count(),
-  ])
+  try {
+    const [posts, apps, tools, experiences, workSamples] = await Promise.all([
+      prisma.post.count(),
+      prisma.webApp.count(),
+      prisma.tool.count(),
+      prisma.experience.count(),
+      prisma.workSample.count(),
+    ])
 
-  return [
-    {
-      key: "posts",
-      title: "Posts",
-      href: "/admin/posts",
-      count: posts,
-      description: `You have ${posts} published post${posts === 1 ? "" : "s"}.`,
-      emptyDescription: "Share your expertise by publishing your first post.",
-      actionLabel: "Create post",
-    },
-    {
-      key: "apps",
-      title: "Apps",
-      href: "/admin/apps",
-      count: apps,
-      description: `${apps} app${apps === 1 ? "" : "s"} showcased on your site.`,
-      emptyDescription: "Highlight your standout apps to engage visitors.",
-      actionLabel: "Create app",
-    },
-    {
-      key: "tools",
-      title: "Tools",
-      href: "/admin/tools",
-      count: tools,
-      description: `${tools} tool${tools === 1 ? "" : "s"} documented in your stack.`,
-      emptyDescription: "Document the tools you rely on to build trust.",
-      actionLabel: "Create tool",
-    },
-    {
-      key: "experiences",
-      title: "Experiences",
-      href: "/admin/experiences",
-      count: experiences,
-      description: `${experiences} experience${experiences === 1 ? "" : "s"} shaping your story.`,
-      emptyDescription: "Add career milestones to tell your professional story.",
-      actionLabel: "Create experience",
-    },
-    {
-      key: "work-samples",
-      title: "Work samples",
-      href: "/admin/worksamples",
-      count: workSamples,
-      description: `${workSamples} work sample${workSamples === 1 ? "" : "s"} published.`,
-      emptyDescription: "Showcase the projects you are proud of.",
-      actionLabel: "Create sample",
-    },
-  ]
+    return [
+      {
+        key: "posts",
+        title: "Posts",
+        href: "/admin/posts",
+        count: posts,
+        description: `You have ${posts} published post${posts === 1 ? "" : "s"}.`,
+        emptyDescription: "Share your expertise by publishing your first post.",
+        actionLabel: "Create post",
+      },
+      {
+        key: "apps",
+        title: "Apps",
+        href: "/admin/apps",
+        count: apps,
+        description: `${apps} app${apps === 1 ? "" : "s"} showcased on your site.`,
+        emptyDescription: "Highlight your standout apps to engage visitors.",
+        actionLabel: "Create app",
+      },
+      {
+        key: "tools",
+        title: "Tools",
+        href: "/admin/tools",
+        count: tools,
+        description: `${tools} tool${tools === 1 ? "" : "s"} documented in your stack.`,
+        emptyDescription: "Document the tools you rely on to build trust.",
+        actionLabel: "Create tool",
+      },
+      {
+        key: "experiences",
+        title: "Experiences",
+        href: "/admin/experiences",
+        count: experiences,
+        description: `${experiences} experience${experiences === 1 ? "" : "s"} shaping your story.`,
+        emptyDescription: "Add career milestones to tell your professional story.",
+        actionLabel: "Create experience",
+      },
+      {
+        key: "work-samples",
+        title: "Work samples",
+        href: "/admin/worksamples",
+        count: workSamples,
+        description: `${workSamples} work sample${workSamples === 1 ? "" : "s"} published.`,
+        emptyDescription: "Showcase the projects you are proud of.",
+        actionLabel: "Create sample",
+      },
+    ]
+  } catch (error) {
+    console.error("Failed to load dashboard stats", error)
+    return EMPTY_STATS
+  }
 }
 
 export default async function AdminDashboard() {
