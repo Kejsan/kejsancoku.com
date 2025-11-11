@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, PostStatus } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -6,7 +7,7 @@ const blogPosts = [
   {
     slug: 'technical-seo-audit-checklist-2024',
     title: 'The Complete Technical SEO Audit Checklist for 2024',
-    status: 'PUBLISHED',
+    status: PostStatus.PUBLISHED,
     published: true,
     publishedAt: new Date(),
     metaDescription:
@@ -130,7 +131,7 @@ Technical SEO isn't glamorous, but it's the foundation that makes everything els
   {
     slug: 'scaling-content-marketing-ai-companies',
     title: 'How I Scaled Content Marketing for AI Companies: A Case Study',
-    status: 'PUBLISHED',
+    status: PostStatus.PUBLISHED,
     published: true,
     publishedAt: new Date(),
     metaDescription:
@@ -333,7 +334,7 @@ The key to scaling content marketing for AI companies isn't just creating more c
 *Want to discuss content marketing strategies for your AI company? Let's connect and share insights.*
       `,
   },
-]
+] satisfies Array<Omit<Prisma.PostCreateInput, 'statusChangedAt' | 'statusChangedBy'>>
 
 async function main() {
   console.log(`Start seeding ...`)
