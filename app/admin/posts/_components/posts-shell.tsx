@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useTransition } from "react"
+import { Filter } from "lucide-react"
 import { toast } from "sonner"
 
 import { DataTable } from "@/components/admin/ui/data-table"
@@ -16,7 +17,24 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { createPost, updatePost, deletePost, bulkDeletePosts, duplicatePost } from "../actions"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  bulkDeletePosts,
+  bulkPublishPosts,
+  bulkUnpublishPosts,
+  createPost,
+  deletePost,
+  duplicatePost,
+  updatePost,
+} from "../actions"
 import { postFormSchema, type PostFormValues } from "../schema"
 import type { SerializedPost } from "../serializers"
 import { PostFormDrawer, type PostFormDrawerMode } from "./post-form-drawer"
@@ -28,7 +46,9 @@ const EMPTY_FORM: PostFormValues = {
   content: "",
   metaDescription: "",
   featuredBanner: "",
-  published: true,
+  status: "draft",
+  scheduledAt: undefined,
+  publishedAt: undefined,
 }
 
 type DrawerState = {
@@ -41,12 +61,87 @@ type BulkDeleteState = {
   clearSelection: () => void
 }
 
+type StatusFilterValue = "all" | "draft" | "scheduled" | "published"
+
+const STATUS_FILTER_LABELS: Record<StatusFilterValue, string> = {
+  all: "All statuses",
+  draft: "Drafts",
+  scheduled: "Scheduled",
+  published: "Published",
+}
+
+function toNullableString(value?: string | null) {
+  const trimmed = value?.trim()
+  return trimmed && trimmed.length > 0 ? trimmed : null
+}
+
+function toIsoStringOrNull(value?: string) {
+  if (!value) return null
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.valueOf()) ? null : parsed.toISOString()
+}
+
+function computeStatusFields(existing: PostRow | null, values: PostFormValues, nowIso: string) {
+  const scheduledAt = values.status === "scheduled" ? toIsoStringOrNull(values.scheduledAt) : null
+  const publishedAt = values.status === "published"
+    ? toIsoStringOrNull(values.publishedAt) ?? (existing?.publishedAt ?? nowIso)
+    : null
+
+  const statusChanged =
+    !existing ||
+    existing.status !== values.status ||
+    (existing.scheduledAt ?? null) !== (scheduledAt ?? null) ||
+    (existing.publishedAt ?? null) !== (publishedAt ?? null)
+
+  return {
+    status: values.status,
+    scheduledAt,
+    publishedAt,
+    published: values.status === "published",
+    statusChangedAt: statusChanged ? nowIso : existing?.statusChangedAt ?? nowIso,
+  }
+}
+
+function createOptimisticPost(values: PostFormValues): PostRow {
+  const now = new Date().toISOString()
+  const statusFields = computeStatusFields(null, values, now)
+  return {
+    id: -Math.floor(Math.random() * 1_000_000),
+    slug: values.slug.trim(),
+    title: values.title.trim(),
+    content: toNullableString(values.content),
+    metaDescription: toNullableString(values.metaDescription),
+    featuredBanner: toNullableString(values.featuredBanner),
+    createdAt: now,
+    updatedAt: now,
+    statusChangedBy: null,
+    ...statusFields,
+  }
+}
+
+function updateOptimisticPost(existing: PostRow, values: PostFormValues): PostRow {
+  const now = new Date().toISOString()
+  const statusFields = computeStatusFields(existing, values, now)
+  return {
+    ...existing,
+    slug: values.slug.trim(),
+    title: values.title.trim(),
+    content: toNullableString(values.content),
+    metaDescription: toNullableString(values.metaDescription),
+    featuredBanner: toNullableString(values.featuredBanner),
+    updatedAt: now,
+    ...statusFields,
+  }
+}
+
 type PostsPageShellProps = {
   initialPosts: SerializedPost[]
 }
 
 export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
-  const [posts, setPosts] = React.useState<PostRow[]>(initialPosts)
+  const [posts, setPosts] = React.useState<PostRow[]>(() =>
+    [...initialPosts].sort((a, b) => new Date(b.updatedAt).valueOf() - new Date(a.updatedAt).valueOf()),
+  )
   const postsRef = React.useRef(posts)
   React.useEffect(() => {
     postsRef.current = posts
@@ -55,9 +150,11 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
   const [drawerState, setDrawerState] = React.useState<DrawerState | null>(null)
   const [deleteTarget, setDeleteTarget] = React.useState<PostRow | null>(null)
   const [bulkDeleteState, setBulkDeleteState] = React.useState<BulkDeleteState | null>(null)
+  const [statusFilter, setStatusFilter] = React.useState<StatusFilterValue>("all")
 
   const [isPending, startTransition] = useTransition()
   const [isBulkPending, startBulkTransition] = useTransition()
+  const [isStatusPending, startStatusTransition] = useTransition()
   const [, startQuickTransition] = useTransition()
 
   const ensureSlug = React.useCallback((slug: string) => {
@@ -83,7 +180,14 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
     const suggestedSlug = ensureSlug(`${post.slug}-copy`)
     setDrawerState({
       mode: "duplicate",
-      post: { ...post, slug: suggestedSlug, published: false },
+      post: {
+        ...post,
+        slug: suggestedSlug,
+        status: "draft",
+        published: false,
+        scheduledAt: null,
+        publishedAt: null,
+      },
     })
   }, [ensureSlug])
 
@@ -97,19 +201,7 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
         return
       }
 
-      const placeholder: PostRow = {
-        id: -Math.floor(Math.random() * 1_000_000),
-        slug: parsed.data.slug,
-        title: parsed.data.title,
-        content: parsed.data.content ?? null,
-        metaDescription: parsed.data.metaDescription ?? null,
-        featuredBanner: parsed.data.featuredBanner && parsed.data.featuredBanner.length > 0
-          ? parsed.data.featuredBanner
-          : null,
-        published: parsed.data.published ?? true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
+      const placeholder = createOptimisticPost(parsed.data)
 
       const snapshot = postsRef.current
       const optimistic = [placeholder, ...snapshot]
@@ -127,8 +219,10 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
           }
 
           setPosts((current) => {
-            const withoutPlaceholder = current.filter((post) => post.slug !== placeholder.slug)
-            const next = [result.data, ...withoutPlaceholder]
+            const withoutPlaceholder = current.filter((post) => post.id !== placeholder.id)
+            const next = [result.data, ...withoutPlaceholder].sort(
+              (a, b) => new Date(b.updatedAt).valueOf() - new Date(a.updatedAt).valueOf(),
+            )
             postsRef.current = next
             return next
           })
@@ -151,19 +245,7 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
 
       const snapshot = postsRef.current
       const optimistic = snapshot.map((post) =>
-        post.id === drawerState.post?.id
-          ? {
-              ...post,
-              ...parsed.data,
-              content: parsed.data.content ?? null,
-              metaDescription: parsed.data.metaDescription ?? null,
-              featuredBanner:
-                parsed.data.featuredBanner && parsed.data.featuredBanner.length > 0
-                  ? parsed.data.featuredBanner
-                  : null,
-              updatedAt: new Date().toISOString(),
-            }
-          : post,
+        post.id === drawerState.post?.id ? updateOptimisticPost(post, parsed.data) : post,
       )
       setPosts(optimistic)
       postsRef.current = optimistic
@@ -178,17 +260,13 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
             return
           }
 
-          setPosts((current) => {
-            const next = current.map((post) => (post.id === result.data.id ? result.data : post))
-            postsRef.current = next
-            return next
-          })
+          applyServerUpdates([result.data])
           toast.success("Post updated")
           closeDrawer()
         })()
       })
     },
-    [drawerState?.post, closeDrawer, startTransition],
+    [applyServerUpdates, drawerState?.post, closeDrawer, startTransition],
   )
 
   const handleDuplicateFromDrawer = React.useCallback(
@@ -196,6 +274,52 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
       handleCreate(values)
     },
     [handleCreate],
+  )
+
+  const applyServerUpdates = React.useCallback((updated: SerializedPost[]) => {
+    setPosts((current) => {
+      const map = new Map(updated.map((post) => [post.id, post]))
+      const next = current
+        .map((row) => map.get(row.id) ?? row)
+        .sort((a, b) => new Date(b.updatedAt).valueOf() - new Date(a.updatedAt).valueOf())
+      postsRef.current = next
+      return next
+    })
+  }, [])
+
+  const handleBulkStatusChange = React.useCallback(
+    (rows: PostRow[], clearSelection: () => void, target: "publish" | "draft") => {
+      const slugs = rows.map((row) => row.slug)
+      if (slugs.length === 0) return
+
+      startStatusTransition(() => {
+        void (async () => {
+          const result =
+            target === "publish"
+              ? await bulkPublishPosts(slugs)
+              : await bulkUnpublishPosts(slugs)
+
+          if (!result.ok) {
+            toast.error(result.message)
+            return
+          }
+
+          applyServerUpdates(result.data.posts)
+          clearSelection()
+
+          if (result.data.count === 0) {
+            toast.info("No posts updated")
+          } else {
+            toast.success(
+              target === "publish"
+                ? `Published ${result.data.count} ${result.data.count === 1 ? "post" : "posts"}`
+                : `Unpublished ${result.data.count} ${result.data.count === 1 ? "post" : "posts"}`,
+            )
+          }
+        })()
+      })
+    },
+    [applyServerUpdates, startStatusTransition],
   )
 
   const handleDelete = React.useCallback(
@@ -268,7 +392,9 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
           }
 
           setPosts((current) => {
-            const next = [result.data, ...current]
+            const next = [result.data, ...current].sort(
+              (a, b) => new Date(b.updatedAt).valueOf() - new Date(a.updatedAt).valueOf(),
+            )
             postsRef.current = next
             return next
           })
@@ -302,7 +428,9 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
       content: post.content ?? "",
       metaDescription: post.metaDescription ?? "",
       featuredBanner: post.featuredBanner ?? "",
-      published: post.published,
+      status: post.status ?? "draft",
+      scheduledAt: post.scheduledAt ?? undefined,
+      publishedAt: post.publishedAt ?? undefined,
     }
   }, [drawerState])
 
@@ -321,7 +449,7 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
           columns={columns}
           data={posts}
           searchKey="title"
-          searchPlaceholder="Search posts..."
+          searchPlaceholder="Search title or slug..."
           emptyState={{
             title: "No posts yet",
             description: "Create your first post to start sharing updates.",
@@ -336,18 +464,66 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
               New post
             </Button>
           }
-          bulkActions={({ rows, clearSelection }) => (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setBulkDeleteState({ rows, clearSelection })}
-              disabled={isBulkPending}
-              className="h-8"
-            >
-              Delete selected ({rows.length})
-            </Button>
+          toolbarActions={(table) => (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-2">
+                  <Filter className="h-4 w-4" aria-hidden />
+                  {STATUS_FILTER_LABELS[statusFilter]}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel>Filter status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  value={statusFilter}
+                  onValueChange={(value) => {
+                    const nextValue = value as StatusFilterValue
+                    setStatusFilter(nextValue)
+                    const column = table.getColumn("status")
+                    column?.setFilterValue(nextValue === "all" ? undefined : nextValue)
+                  }}
+                >
+                  <DropdownMenuRadioItem value="all">All statuses</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="published">Published</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="scheduled">Scheduled</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="draft">Drafts</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
-          isLoading={isPending || isBulkPending}
+          bulkActions={({ rows, clearSelection }) => (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleBulkStatusChange(rows, clearSelection, "publish")}
+                disabled={isStatusPending}
+                className="h-8"
+              >
+                Publish ({rows.length})
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleBulkStatusChange(rows, clearSelection, "draft")}
+                disabled={isStatusPending}
+                className="h-8"
+              >
+                Unpublish
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setBulkDeleteState({ rows, clearSelection })}
+                disabled={isBulkPending}
+                className="h-8"
+              >
+                Delete ({rows.length})
+              </Button>
+            </div>
+          )}
+          isLoading={isPending || isBulkPending || isStatusPending}
           getRowId={(row) => row.slug}
         />
       </div>

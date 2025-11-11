@@ -6,6 +6,9 @@ const blogPosts = [
   {
     slug: 'technical-seo-audit-checklist-2024',
     title: 'The Complete Technical SEO Audit Checklist for 2024',
+    status: 'PUBLISHED',
+    published: true,
+    publishedAt: new Date(),
     metaDescription:
       'A comprehensive guide to conducting technical SEO audits that actually move the needle. Based on auditing 3000+ pages across multiple e-commerce sites.',
     featuredBanner: '/technical-seo-dashboard.png',
@@ -127,6 +130,9 @@ Technical SEO isn't glamorous, but it's the foundation that makes everything els
   {
     slug: 'scaling-content-marketing-ai-companies',
     title: 'How I Scaled Content Marketing for AI Companies: A Case Study',
+    status: 'PUBLISHED',
+    published: true,
+    publishedAt: new Date(),
     metaDescription:
       'From launching newsletters to 3200+ subscribers to managing multi-platform content strategies. Real tactics that worked at Cardo AI.',
     featuredBanner: '/content-marketing-growth-chart.png',

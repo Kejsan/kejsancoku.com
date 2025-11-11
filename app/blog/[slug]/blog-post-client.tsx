@@ -86,7 +86,7 @@ export default function BlogPostClient({ post }: { post: Post | null }) {
         url: "/placeholder-logo.svg",
       },
     },
-    datePublished: new Date(post.createdAt).toISOString(),
+    datePublished: new Date(post.publishedAt ?? post.createdAt).toISOString(),
     dateModified: new Date(post.updatedAt).toISOString(),
   };
 
@@ -154,7 +154,7 @@ export default function BlogPostClient({ post }: { post: Post | null }) {
               <div className="flex items-center gap-6 text-white/60">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  {new Date(post.createdAt).toLocaleDateString()}
+                  {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString()}
                 </div>
               </div>
             </div>

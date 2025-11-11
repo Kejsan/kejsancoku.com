@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     }
   }
   const post = await prisma.post.findUnique({
-    where: { slug: params.slug },
+    where: { slug: params.slug, status: "PUBLISHED" },
   })
 
   if (!post) {
@@ -32,7 +32,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     return <BlogPostClient post={null} />
   }
   const post = await prisma.post.findUnique({
-    where: { slug: params.slug },
+    where: { slug: params.slug, status: "PUBLISHED" },
   })
 
   return <BlogPostClient post={post} />

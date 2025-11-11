@@ -12,6 +12,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  type Table,
 } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
@@ -45,7 +46,7 @@ export type DataTableProps<TData, TValue> = {
   searchPlaceholder?: string
   emptyState: EmptyStateProps
   primaryAction?: React.ReactNode
-  toolbarActions?: React.ReactNode
+  toolbarActions?: React.ReactNode | ((table: Table<TData>) => React.ReactNode)
   bulkActions?: DataTableBulkAction<TData>
   isLoading?: boolean
   pageSizeOptions?: number[]
@@ -105,6 +106,8 @@ export function DataTable<TData, TValue>({
   const clearSelection = React.useCallback(() => table.resetRowSelection(), [table])
 
   const showEmptyState = !isLoading && data.length === 0
+  const resolvedToolbarActions =
+    typeof toolbarActions === "function" ? toolbarActions(table) : toolbarActions
 
   return (
     <div className="space-y-4">
@@ -121,7 +124,7 @@ export function DataTable<TData, TValue>({
             {primaryAction}
           </div>
           <div className="flex items-center gap-2">
-            {toolbarActions}
+            {resolvedToolbarActions}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9 gap-2">
