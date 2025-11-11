@@ -13,3 +13,7 @@ The admin dashboard lives at `/admin` and provides links to manage posts, experi
 
 > [!IMPORTANT]
 > For a detailed guide on setting up the environment variables and ensuring your GitHub email is configured correctly for admin access, please see the [Admin Section Setup Guide](./ADMIN_GUIDE.md).
+
+## Database migrations
+
+Netlify builds run with the `NETLIFY=true` environment variable, so the automated build pipeline skips `prisma migrate deploy`. Apply migrations from CI or manually before triggering a Netlify deploy to ensure the production database schema matches the application.

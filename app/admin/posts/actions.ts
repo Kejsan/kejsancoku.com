@@ -7,6 +7,7 @@ import type { Post, PostStatus } from "@prisma/client"
 import { hasTimezone } from "./date-utils"
 import { postFormSchema, type PostFormValues } from "./schema"
 import { serializePost } from "./serializers"
+import { buildStatusToggle } from "./status-toggle"
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import { prisma } from "@/lib/prisma"
 import { getSafeAdminSession } from "@/lib/safe-session"
@@ -100,33 +101,6 @@ function normalizePostInput(
           statusChangedBy: actorEmail ?? null,
         }
       : {}),
-  }
-}
-
-function buildStatusToggle(
-  post: Post,
-  target: "draft" | "published",
-  actorEmail: string | null,
-) {
-  const now = new Date()
-  if (target === "published") {
-    return {
-      status: "PUBLISHED" as PostStatus,
-      published: true,
-      scheduledAt: null,
-      publishedAt: now,
-      statusChangedAt: now,
-      statusChangedBy: actorEmail ?? null,
-    }
-  }
-
-  return {
-    status: "DRAFT" as PostStatus,
-    published: false,
-    scheduledAt: null,
-    publishedAt: null,
-    statusChangedAt: now,
-    statusChangedBy: actorEmail ?? null,
   }
 }
 
@@ -380,11 +354,26 @@ export async function bulkPublishPosts(
       return { ok: true, data: { count: 0, posts: [] } }
     }
 
+    const pendingUpdates: {
+      original: Post
+      data: NonNullable<ReturnType<typeof buildStatusToggle>>
+    }[] = []
+    for (const post of posts) {
+      const data = buildStatusToggle(post, "published", session.email ?? null)
+      if (data) {
+        pendingUpdates.push({ original: post, data })
+      }
+    }
+
+    if (pendingUpdates.length === 0) {
+      return { ok: true, data: { count: 0, posts: [] } }
+    }
+
     const updated = await prisma.$transaction(
-      posts.map((post) =>
+      pendingUpdates.map(({ original, data }) =>
         prisma.post.update({
-          where: { slug: post.slug },
-          data: buildStatusToggle(post, "published", session.email ?? null),
+          where: { slug: original.slug },
+          data,
         }),
       ),
     )
@@ -396,7 +385,7 @@ export async function bulkPublishPosts(
           entityType: "Post",
           entityId: post.slug,
           action: "UPDATE",
-          diff: buildAuditDiff(posts[index], post),
+          diff: buildAuditDiff(pendingUpdates[index].original, post),
         }),
       ),
     )
@@ -436,11 +425,26 @@ export async function bulkUnpublishPosts(
       return { ok: true, data: { count: 0, posts: [] } }
     }
 
+    const pendingUpdates: {
+      original: Post
+      data: NonNullable<ReturnType<typeof buildStatusToggle>>
+    }[] = []
+    for (const post of posts) {
+      const data = buildStatusToggle(post, "draft", session.email ?? null)
+      if (data) {
+        pendingUpdates.push({ original: post, data })
+      }
+    }
+
+    if (pendingUpdates.length === 0) {
+      return { ok: true, data: { count: 0, posts: [] } }
+    }
+
     const updated = await prisma.$transaction(
-      posts.map((post) =>
+      pendingUpdates.map(({ original, data }) =>
         prisma.post.update({
-          where: { slug: post.slug },
-          data: buildStatusToggle(post, "draft", session.email ?? null),
+          where: { slug: original.slug },
+          data,
         }),
       ),
     )
@@ -452,7 +456,7 @@ export async function bulkUnpublishPosts(
           entityType: "Post",
           entityId: post.slug,
           action: "UPDATE",
-          diff: buildAuditDiff(posts[index], post),
+          diff: buildAuditDiff(pendingUpdates[index].original, post),
         }),
       ),
     )
