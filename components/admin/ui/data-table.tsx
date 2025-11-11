@@ -12,7 +12,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-  type Table,
+  type Table as TanStackTable,
 } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
@@ -46,7 +46,7 @@ export type DataTableProps<TData, TValue> = {
   searchPlaceholder?: string
   emptyState: EmptyStateProps
   primaryAction?: React.ReactNode
-  toolbarActions?: React.ReactNode | ((table: Table<TData>) => React.ReactNode)
+  toolbarActions?: React.ReactNode | ((table: TanStackTable<TData>) => React.ReactNode)
   bulkActions?: DataTableBulkAction<TData>
   isLoading?: boolean
   pageSizeOptions?: number[]
