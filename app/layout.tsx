@@ -35,45 +35,71 @@ export default async function RootLayout({
       prisma.webApp.findMany(),
     ])
 
-    if (settingsResult.status === "fulfilled") {
-      settings = settingsResult.value
-    } else if (
-      settingsResult.reason instanceof Prisma.PrismaClientKnownRequestError &&
-      ["P2021", "P2022"].includes(settingsResult.reason.code)
-    ) {
-      console.error("Failed to load site settings:", settingsResult.reason)
-      settings = null
-    } else if (
-      settingsResult.reason instanceof Prisma.PrismaClientInitializationError
-    ) {
-      console.error(
-        "Prisma initialization error while loading site settings:",
-        settingsResult.reason,
-      )
-      settings = null
-    } else {
-      throw settingsResult.reason
+    const applySettledResult = <T,>(
+      result: PromiseSettledResult<T>,
+      onFulfilled: (value: T) => void,
+      onFallback: () => void,
+      context: string,
+    ) => {
+      if (result.status === "fulfilled") {
+        onFulfilled(result.value)
+        return
+      }
+
+      const { reason } = result
+
+      if (
+        reason instanceof Prisma.PrismaClientKnownRequestError ||
+        reason instanceof Prisma.PrismaClientUnknownRequestError ||
+        reason instanceof Prisma.PrismaClientRustPanicError ||
+        reason instanceof Prisma.PrismaClientInitializationError ||
+        reason instanceof Prisma.PrismaClientValidationError
+      ) {
+        const isRecordNotFound =
+          reason instanceof Prisma.PrismaClientKnownRequestError &&
+          reason.code === "P2025"
+
+        console.error(
+          `${context}${isRecordNotFound ? " (record not found)" : ""}:`,
+          reason,
+        )
+        onFallback()
+        return
+      }
+
+      if (
+        reason instanceof Error &&
+        typeof (reason as { clientVersion?: unknown }).clientVersion === "string"
+      ) {
+        console.error(`${context}: Unexpected Prisma error`, reason)
+        onFallback()
+        return
+      }
+
+      throw reason
     }
 
-    if (appsResult.status === "fulfilled") {
-      apps = appsResult.value
-    } else if (
-      appsResult.reason instanceof Prisma.PrismaClientKnownRequestError &&
-      ["P2021", "P2022"].includes(appsResult.reason.code)
-    ) {
-      console.error("Failed to load web apps:", appsResult.reason)
-      apps = []
-    } else if (
-      appsResult.reason instanceof Prisma.PrismaClientInitializationError
-    ) {
-      console.error(
-        "Prisma initialization error while loading web apps:",
-        appsResult.reason,
-      )
-      apps = []
-    } else {
-      throw appsResult.reason
-    }
+    applySettledResult(
+      settingsResult,
+      (value) => {
+        settings = value
+      },
+      () => {
+        settings = null
+      },
+      "Failed to load site settings",
+    )
+
+    applySettledResult(
+      appsResult,
+      (value) => {
+        apps = value
+      },
+      () => {
+        apps = []
+      },
+      "Failed to load web apps",
+    )
   }
 
   return (
