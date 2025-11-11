@@ -2,8 +2,12 @@
 
 import { revalidatePath } from "next/cache"
 
+import type { Post, PostStatus } from "@prisma/client"
+
+import { hasTimezone } from "./date-utils"
 import { postFormSchema, type PostFormValues } from "./schema"
 import { serializePost } from "./serializers"
+import { buildStatusToggle } from "./status-toggle"
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import { prisma } from "@/lib/prisma"
 import { getSafeAdminSession } from "@/lib/safe-session"
@@ -20,8 +24,23 @@ type ActionSuccess<T> = {
 
 type ActionResult<T> = ActionError | ActionSuccess<T>
 
-function normalizePostInput(input: PostFormValues) {
-  return {
+function parseOptionalDate(value: string | undefined) {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (trimmed.length === 0) return null
+  if (!hasTimezone(trimmed)) {
+    throw new Error("Datetime values must include a timezone offset.")
+  }
+  const parsed = new Date(trimmed)
+  return Number.isNaN(parsed.valueOf()) ? null : parsed
+}
+
+function normalizePostInput(
+  input: PostFormValues,
+  actorEmail: string | null,
+  existing?: Post | null,
+) {
+  const base = {
     slug: input.slug.trim(),
     title: input.title.trim(),
     content: input.content?.trim() ? input.content.trim() : null,
@@ -31,7 +50,57 @@ function normalizePostInput(input: PostFormValues) {
     featuredBanner: input.featuredBanner && input.featuredBanner.trim().length > 0
       ? input.featuredBanner.trim()
       : null,
-    published: input.published ?? true,
+  }
+
+  const now = new Date()
+  let status: PostStatus
+  let scheduledAt: Date | null = null
+  let publishedAt: Date | null = null
+
+  if (input.status === "published") {
+    status = "PUBLISHED"
+    const provided = parseOptionalDate(input.publishedAt)
+    if (existing?.status === "PUBLISHED" && !provided) {
+      publishedAt = existing.publishedAt ?? now
+    } else {
+      publishedAt = provided ?? now
+    }
+  } else if (input.status === "scheduled") {
+    status = "SCHEDULED"
+    scheduledAt = parseOptionalDate(input.scheduledAt)
+  } else {
+    status = "DRAFT"
+  }
+
+  if (status !== "SCHEDULED") {
+    scheduledAt = null
+  }
+
+  if (status !== "PUBLISHED") {
+    publishedAt = null
+  }
+
+  const statusChanged =
+    !existing || existing.status !== status ||
+    (status === "SCHEDULED"
+      ? existing?.scheduledAt?.getTime() !== scheduledAt?.getTime()
+      : false) ||
+    (status === "PUBLISHED"
+      ? existing?.publishedAt?.getTime() !== publishedAt?.getTime()
+      : false)
+
+  return {
+    ...base,
+    status,
+    scheduledAt,
+    publishedAt,
+    published: status === "PUBLISHED",
+    ...(statusChanged
+      ? {
+          statusChangedAt: now,
+          statusChangedBy: actorEmail ?? null,
+        }
+      : {}),
   }
 }
 
@@ -80,7 +149,7 @@ export async function createPost(
     return { ok: false, message }
   }
 
-  const data = normalizePostInput(parsed.data)
+  const data = normalizePostInput(parsed.data, session.email ?? null)
 
   try {
     const post = await prisma.post.create({ data })
@@ -120,14 +189,13 @@ export async function updatePost(
     return { ok: false, message }
   }
 
-  const data = normalizePostInput(parsed.data)
-
   try {
     const existing = await prisma.post.findUnique({ where: { slug } })
     if (!existing) {
       return { ok: false, message: "Post not found" }
     }
 
+    const data = normalizePostInput(parsed.data, session.email ?? null, existing)
     const post = await prisma.post.update({ where: { slug }, data })
     await recordAudit({
       actorEmail: session.email,
@@ -203,6 +271,11 @@ export async function duplicatePost(
         metaDescription: existing.metaDescription,
         featuredBanner: existing.featuredBanner,
         published: false,
+        status: "DRAFT",
+        scheduledAt: null,
+        publishedAt: null,
+        statusChangedAt: new Date(),
+        statusChangedBy: session.email ?? null,
       },
     })
 
@@ -255,6 +328,148 @@ export async function bulkDeletePosts(slugs: string[]): Promise<ActionResult<{ c
   } catch (error) {
     console.error("Failed to delete posts", error)
     const message = error instanceof Error ? error.message : "Failed to delete posts"
+    return { ok: false, message }
+  }
+}
+
+export async function bulkPublishPosts(
+  slugs: string[],
+): Promise<ActionResult<{ count: number; posts: ReturnType<typeof serializePost>[] }>> {
+  if (!prisma) {
+    return { ok: false, message: "Database is not configured." }
+  }
+
+  const session = await ensureAdminSession()
+  if (!("email" in session)) {
+    return session
+  }
+
+  if (slugs.length === 0) {
+    return { ok: true, data: { count: 0, posts: [] } }
+  }
+
+  try {
+    const posts = await prisma.post.findMany({ where: { slug: { in: slugs } } })
+    if (posts.length === 0) {
+      return { ok: true, data: { count: 0, posts: [] } }
+    }
+
+    const pendingUpdates: {
+      original: Post
+      data: NonNullable<ReturnType<typeof buildStatusToggle>>
+    }[] = []
+    for (const post of posts) {
+      const data = buildStatusToggle(post, "published", session.email ?? null)
+      if (data) {
+        pendingUpdates.push({ original: post, data })
+      }
+    }
+
+    if (pendingUpdates.length === 0) {
+      return { ok: true, data: { count: 0, posts: [] } }
+    }
+
+    const updated = await prisma.$transaction(
+      pendingUpdates.map(({ original, data }) =>
+        prisma.post.update({
+          where: { slug: original.slug },
+          data,
+        }),
+      ),
+    )
+
+    await Promise.all(
+      updated.map((post, index) =>
+        recordAudit({
+          actorEmail: session.email,
+          entityType: "Post",
+          entityId: post.slug,
+          action: "UPDATE",
+          diff: buildAuditDiff(pendingUpdates[index].original, post),
+        }),
+      ),
+    )
+
+    revalidatePath("/admin/posts")
+
+    return {
+      ok: true,
+      data: { count: updated.length, posts: updated.map(serializePost) },
+    }
+  } catch (error) {
+    console.error("Failed to publish posts", error)
+    const message = error instanceof Error ? error.message : "Failed to publish posts"
+    return { ok: false, message }
+  }
+}
+
+export async function bulkUnpublishPosts(
+  slugs: string[],
+): Promise<ActionResult<{ count: number; posts: ReturnType<typeof serializePost>[] }>> {
+  if (!prisma) {
+    return { ok: false, message: "Database is not configured." }
+  }
+
+  const session = await ensureAdminSession()
+  if (!("email" in session)) {
+    return session
+  }
+
+  if (slugs.length === 0) {
+    return { ok: true, data: { count: 0, posts: [] } }
+  }
+
+  try {
+    const posts = await prisma.post.findMany({ where: { slug: { in: slugs } } })
+    if (posts.length === 0) {
+      return { ok: true, data: { count: 0, posts: [] } }
+    }
+
+    const pendingUpdates: {
+      original: Post
+      data: NonNullable<ReturnType<typeof buildStatusToggle>>
+    }[] = []
+    for (const post of posts) {
+      const data = buildStatusToggle(post, "draft", session.email ?? null)
+      if (data) {
+        pendingUpdates.push({ original: post, data })
+      }
+    }
+
+    if (pendingUpdates.length === 0) {
+      return { ok: true, data: { count: 0, posts: [] } }
+    }
+
+    const updated = await prisma.$transaction(
+      pendingUpdates.map(({ original, data }) =>
+        prisma.post.update({
+          where: { slug: original.slug },
+          data,
+        }),
+      ),
+    )
+
+    await Promise.all(
+      updated.map((post, index) =>
+        recordAudit({
+          actorEmail: session.email,
+          entityType: "Post",
+          entityId: post.slug,
+          action: "UPDATE",
+          diff: buildAuditDiff(pendingUpdates[index].original, post),
+        }),
+      ),
+    )
+
+    revalidatePath("/admin/posts")
+
+    return {
+      ok: true,
+      data: { count: updated.length, posts: updated.map(serializePost) },
+    }
+  } catch (error) {
+    console.error("Failed to unpublish posts", error)
+    const message = error instanceof Error ? error.message : "Failed to unpublish posts"
     return { ok: false, message }
   }
 }

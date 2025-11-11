@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import ReactMarkdown from "react-markdown"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 
@@ -23,7 +24,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { clientDateTimeToIso } from "../date-utils"
 import { postFormSchema, type PostFormValues } from "../schema"
 
 export type PostFormDrawerMode = "create" | "edit" | "duplicate"
@@ -55,6 +57,15 @@ type PostFormDrawerProps = {
   isPending?: boolean
 }
 
+function formatDateTimeLocal(value?: string | null) {
+  if (!value) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.valueOf())) return ""
+  const offsetMs = date.getTimezoneOffset() * 60_000
+  const local = new Date(date.getTime() - offsetMs)
+  return local.toISOString().slice(0, 16)
+}
+
 export function PostFormDrawer({
   mode,
   open,
@@ -69,17 +80,35 @@ export function PostFormDrawer({
     mode: "onChange",
   })
 
+  const [editorTab, setEditorTab] = React.useState<"write" | "preview">("write")
+
   React.useEffect(() => {
     if (open) {
-      form.reset(defaultValues)
+      form.reset({
+        ...defaultValues,
+        scheduledAt: formatDateTimeLocal(defaultValues.scheduledAt ?? undefined),
+        publishedAt: formatDateTimeLocal(defaultValues.publishedAt ?? undefined),
+      })
+      setEditorTab("write")
     }
   }, [open, defaultValues, form])
 
+  function normalizeDateTime(value?: string | null) {
+    const iso = clientDateTimeToIso(value)
+    return iso ?? undefined
+  }
+
   function handleSubmit(values: PostFormValues) {
-    onSubmit(values)
+    onSubmit({
+      ...values,
+      scheduledAt: normalizeDateTime(values.scheduledAt),
+      publishedAt: normalizeDateTime(values.publishedAt),
+    })
   }
 
   const copy = modeCopy[mode]
+  const status = form.watch("status")
+  const contentValue = form.watch("content") ?? ""
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -100,7 +129,7 @@ export function PostFormDrawer({
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Amazing announcement" {...field} />
+                    <Input placeholder="Amazing announcement" {...field} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -113,7 +142,7 @@ export function PostFormDrawer({
                 <FormItem>
                   <FormLabel>Slug</FormLabel>
                   <FormControl>
-                    <Input placeholder="amazing-announcement" {...field} />
+                    <Input placeholder="amazing-announcement" {...field} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -121,17 +150,92 @@ export function PostFormDrawer({
             />
             <FormField
               control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <FormControl>
+                    <select
+                      {...field}
+                      disabled={isPending}
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="scheduled">Scheduled</option>
+                      <option value="published">Published</option>
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {status === "scheduled" ? (
+              <FormField
+                key="scheduledAt"
+                control={form.control}
+                name="scheduledAt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Schedule for</FormLabel>
+                    <FormControl>
+                      <Input type="datetime-local" {...field} disabled={isPending} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
+            {status === "published" ? (
+              <FormField
+                key="publishedAt"
+                control={form.control}
+                name="publishedAt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Publish date</FormLabel>
+                    <FormControl>
+                      <Input type="datetime-local" {...field} disabled={isPending} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
+            <FormField
+              control={form.control}
               name="content"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Content</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Write the post content"
-                      className="min-h-[120px]"
-                      {...field}
-                    />
-                  </FormControl>
+                  <Tabs value={editorTab} onValueChange={(value) => setEditorTab(value as "write" | "preview")}> 
+                    <TabsList className="w-full justify-start">
+                      <TabsTrigger value="write" className="flex-1">
+                        Write
+                      </TabsTrigger>
+                      <TabsTrigger value="preview" className="flex-1">
+                        Preview
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="write" className="mt-4">
+                      <FormControl>
+                        <Textarea
+                          placeholder="Write the post content"
+                          className="min-h-[200px]"
+                          {...field}
+                          disabled={isPending}
+                        />
+                      </FormControl>
+                    </TabsContent>
+                    <TabsContent value="preview" className="mt-4">
+                      <div className="min-h-[200px] rounded-md border bg-muted/40 p-4 text-sm">
+                        {contentValue.trim().length > 0 ? (
+                          <ReactMarkdown>{contentValue}</ReactMarkdown>
+                        ) : (
+                          <p className="text-muted-foreground">Nothing to preview yet.</p>
+                        )}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                   <FormMessage />
                 </FormItem>
               )}
@@ -143,7 +247,7 @@ export function PostFormDrawer({
                 <FormItem>
                   <FormLabel>Meta description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="A short description for SEO" {...field} />
+                    <Textarea placeholder="A short description for SEO" {...field} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -156,35 +260,14 @@ export function PostFormDrawer({
                 <FormItem>
                   <FormLabel>Featured banner URL</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://" {...field} />
+                    <Input placeholder="https://" {...field} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="published"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between space-y-0 rounded-md border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel>Published</FormLabel>
-                    <p className="text-xs text-muted-foreground">
-                      Toggle to control whether this post is live.
-                    </p>
-                  </div>
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={(checked) => field.onChange(!!checked)}
-                      aria-label="Toggle published"
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
             <SheetFooter className="mt-auto">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isPending}>

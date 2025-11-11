@@ -1,7 +1,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, Pencil, Copy, Trash2 } from "lucide-react"
+import { Calendar, Clock, Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -24,6 +24,51 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
   hour: "2-digit",
   minute: "2-digit",
 })
+
+const statusCopy: Record<
+  PostRow["status"],
+  { label: string; variant: "default" | "secondary" | "outline" }
+> = {
+  draft: { label: "Draft", variant: "secondary" },
+  scheduled: { label: "Scheduled", variant: "outline" },
+  published: { label: "Published", variant: "default" },
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "–"
+  const date = new Date(value)
+  if (Number.isNaN(date.valueOf())) return "–"
+  return dateFormatter.format(date)
+}
+
+function renderVisibility(row: PostRow) {
+  if (row.status === "published") {
+    const publishedDate = row.publishedAt ?? row.updatedAt
+    return (
+      <div className="flex flex-col text-sm text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <Calendar className="h-3.5 w-3.5" aria-hidden /> Published
+        </span>
+        <span>{formatDate(publishedDate)}</span>
+      </div>
+    )
+  }
+
+  if (row.status === "scheduled") {
+    return (
+      <div className="flex flex-col text-sm text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <Clock className="h-3.5 w-3.5" aria-hidden /> Scheduled
+        </span>
+        <span>{formatDate(row.scheduledAt)}</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="text-sm text-muted-foreground">Updated {formatDate(row.updatedAt)}</div>
+  )
+}
 
 type ColumnHandlers = {
   onEdit: (post: PostRow) => void
@@ -64,6 +109,15 @@ export function createPostColumns({
     {
       accessorKey: "title",
       header: "Title",
+      filterFn: (row, _columnId, filterValue) => {
+        const query = String(filterValue ?? "").trim().toLowerCase()
+        if (!query) return true
+        const { title, slug } = row.original
+        return (
+          title?.toLowerCase().includes(query) ||
+          slug?.toLowerCase().includes(query)
+        )
+      },
       cell: ({ row }) => (
         <div className="flex flex-col gap-1">
           <span className="font-medium text-foreground">{row.original.title}</span>
@@ -72,14 +126,28 @@ export function createPostColumns({
       ),
     },
     {
-      accessorKey: "published",
+      accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => (
-        <Badge variant={row.original.published ? "default" : "secondary"} className="w-fit">
-          {row.original.published ? "Published" : "Draft"}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const status = row.original.status
+        const copy = statusCopy[status] ?? statusCopy.draft
+        return (
+          <Badge variant={copy.variant} className="w-fit capitalize">
+            {copy.label}
+          </Badge>
+        )
+      },
       sortingFn: "alphanumeric",
+      filterFn: (row, columnId, filterValue) => {
+        const value = String(filterValue ?? "")
+        if (!value || value === "all") return true
+        return row.getValue<string>(columnId) === value
+      },
+    },
+    {
+      id: "visibility",
+      header: "Visibility",
+      cell: ({ row }) => renderVisibility(row.original),
     },
     {
       accessorKey: "updatedAt",

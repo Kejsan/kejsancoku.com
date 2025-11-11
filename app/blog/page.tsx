@@ -102,7 +102,7 @@ export default function BlogPage() {
                         <div className="flex items-center justify-between mt-auto">
                           <div className="flex items-center gap-1 text-white/60 text-xs">
                             <Calendar className="w-3 h-3" />
-                            {new Date(post.createdAt).toLocaleDateString()}
+                            {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString()}
                           </div>
                           <div className="text-[#54a09b] hover:text-[#54a09b]/80 text-xs font-semibold">
                             Read →
