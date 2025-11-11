@@ -335,7 +335,8 @@ export async function bulkDeletePosts(slugs: string[]): Promise<ActionResult<{ c
 export async function bulkPublishPosts(
   slugs: string[],
 ): Promise<ActionResult<{ count: number; posts: ReturnType<typeof serializePost>[] }>> {
-  if (!prisma) {
+  const client = prisma
+  if (!client) {
     return { ok: false, message: "Database is not configured." }
   }
 
@@ -349,7 +350,7 @@ export async function bulkPublishPosts(
   }
 
   try {
-    const posts = await prisma.post.findMany({ where: { slug: { in: slugs } } })
+    const posts = await client.post.findMany({ where: { slug: { in: slugs } } })
     if (posts.length === 0) {
       return { ok: true, data: { count: 0, posts: [] } }
     }
@@ -369,9 +370,9 @@ export async function bulkPublishPosts(
       return { ok: true, data: { count: 0, posts: [] } }
     }
 
-    const updated = await prisma.$transaction(
+    const updated = await client.$transaction(
       pendingUpdates.map(({ original, data }) =>
-        prisma.post.update({
+        client.post.update({
           where: { slug: original.slug },
           data,
         }),
@@ -406,7 +407,8 @@ export async function bulkPublishPosts(
 export async function bulkUnpublishPosts(
   slugs: string[],
 ): Promise<ActionResult<{ count: number; posts: ReturnType<typeof serializePost>[] }>> {
-  if (!prisma) {
+  const client = prisma
+  if (!client) {
     return { ok: false, message: "Database is not configured." }
   }
 
@@ -420,7 +422,7 @@ export async function bulkUnpublishPosts(
   }
 
   try {
-    const posts = await prisma.post.findMany({ where: { slug: { in: slugs } } })
+    const posts = await client.post.findMany({ where: { slug: { in: slugs } } })
     if (posts.length === 0) {
       return { ok: true, data: { count: 0, posts: [] } }
     }
@@ -440,9 +442,9 @@ export async function bulkUnpublishPosts(
       return { ok: true, data: { count: 0, posts: [] } }
     }
 
-    const updated = await prisma.$transaction(
+    const updated = await client.$transaction(
       pendingUpdates.map(({ original, data }) =>
-        prisma.post.update({
+        client.post.update({
           where: { slug: original.slug },
           data,
         }),
