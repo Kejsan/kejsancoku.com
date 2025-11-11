@@ -193,6 +193,17 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
 
   const closeDrawer = React.useCallback(() => setDrawerState(null), [])
 
+  const applyServerUpdates = React.useCallback((updated: SerializedPost[]) => {
+    setPosts((current) => {
+      const map = new Map(updated.map((post) => [post.id, post]))
+      const next = current
+        .map((row) => map.get(row.id) ?? row)
+        .sort((a, b) => new Date(b.updatedAt).valueOf() - new Date(a.updatedAt).valueOf())
+      postsRef.current = next
+      return next
+    })
+  }, [])
+
   const handleCreate = React.useCallback(
     (values: PostFormValues) => {
       const parsed = postFormSchema.safeParse(values)
@@ -275,17 +286,6 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
     },
     [handleCreate],
   )
-
-  const applyServerUpdates = React.useCallback((updated: SerializedPost[]) => {
-    setPosts((current) => {
-      const map = new Map(updated.map((post) => [post.id, post]))
-      const next = current
-        .map((row) => map.get(row.id) ?? row)
-        .sort((a, b) => new Date(b.updatedAt).valueOf() - new Date(a.updatedAt).valueOf())
-      postsRef.current = next
-      return next
-    })
-  }, [])
 
   const handleBulkStatusChange = React.useCallback(
     (rows: PostRow[], clearSelection: () => void, target: "publish" | "draft") => {
