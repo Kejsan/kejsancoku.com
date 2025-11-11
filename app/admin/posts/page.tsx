@@ -1,10 +1,26 @@
 import { prisma } from "@/lib/prisma"
+import { getSafeAdminSession } from "@/lib/safe-session"
 import { serializePost } from "./serializers"
 import { PostsPageShell } from "./_components/posts-shell"
 
 export const dynamic = "force-dynamic"
 
 export default async function PostsPage() {
+  const sessionResult = await getSafeAdminSession()
+
+  if (!sessionResult.ok || !sessionResult.session) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Posts</h1>
+          <p className="text-sm text-muted-foreground">
+            You must be signed in as an admin to manage posts.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (!prisma) {
     return (
       <div className="space-y-4">

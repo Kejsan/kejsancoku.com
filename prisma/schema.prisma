@@ -8,15 +8,26 @@ generator client {
 }
 
 model Post {
-  id              Int      @id @default(autoincrement())
-  slug            String   @unique
+  id              Int         @id @default(autoincrement())
+  slug            String      @unique
   title           String
-  published       Boolean  @default(true)
+  published       Boolean     @default(true)
   content         String?
   metaDescription String?
   featuredBanner  String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  status          PostStatus  @default(DRAFT)
+  scheduledAt     DateTime?
+  publishedAt     DateTime?
+  statusChangedAt DateTime    @default(now())
+  statusChangedBy String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+enum PostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
 }
 
 model Experience {
