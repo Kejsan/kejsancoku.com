@@ -53,10 +53,16 @@ export default async function RootLayout({
         reason instanceof Prisma.PrismaClientUnknownRequestError ||
         reason instanceof Prisma.PrismaClientRustPanicError ||
         reason instanceof Prisma.PrismaClientInitializationError ||
-        reason instanceof Prisma.PrismaClientValidationError ||
-        reason instanceof Prisma.NotFoundError
+        reason instanceof Prisma.PrismaClientValidationError
       ) {
-        console.error(`${context}:`, reason)
+        const isRecordNotFound =
+          reason instanceof Prisma.PrismaClientKnownRequestError &&
+          reason.code === "P2025"
+
+        console.error(
+          `${context}${isRecordNotFound ? " (record not found)" : ""}:`,
+          reason,
+        )
         onFallback()
         return
       }
