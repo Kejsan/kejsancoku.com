@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { PostStatus, Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import { getSafeAdminSession } from '@/lib/safe-session'
-import { serializePost } from '../../../../admin/(dashboard)/posts/serializers'
+import { serializePost } from '../../../admin/(dashboard)/posts/serializers'
 
 const VALID_STATUSES = new Set(["draft", "scheduled", "published"])
 
