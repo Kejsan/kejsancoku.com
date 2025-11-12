@@ -1,13 +1,14 @@
-import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { getAdminSession } from '@/lib/auth'
-import { sanitizeSiteSettingsPayload, toSiteSettingsResponse } from '@/lib/site-settings'
-import { Prisma } from '@prisma/client'
-import { buildAuditDiff, recordAudit } from '@/lib/audit'
+import { NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
+
+import { buildAuditDiff, recordAudit } from "@/lib/audit"
+import { getAdminSession } from "@/lib/auth"
+import prisma from "@/lib/prisma"
+import { sanitizeSiteSettingsPayload, toSiteSettingsResponse } from "@/lib/site-settings"
 
 export async function GET() {
   if (!prisma) {
-    console.warn('Prisma client unavailable for footer GET request.')
+    console.warn("Prisma client unavailable for footer GET request.")
     return NextResponse.json(toSiteSettingsResponse(null), { status: 503 })
   }
   try {
@@ -16,14 +17,14 @@ export async function GET() {
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
-      ['P2021', 'P2022'].includes(error.code)
+      ["P2021", "P2022"].includes(error.code)
     ) {
-      console.error('Failed to load site settings in footer API:', error)
+      console.error("Failed to load site settings in footer API:", error)
       return NextResponse.json(toSiteSettingsResponse(null))
     }
     if (error instanceof Prisma.PrismaClientInitializationError) {
       console.error(
-        'Prisma initialization error while loading site settings in footer API:',
+        "Prisma initialization error while loading site settings in footer API:",
         error,
       )
       return NextResponse.json(toSiteSettingsResponse(null))
@@ -35,11 +36,11 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await getAdminSession()
   if (!session) {
-    return new NextResponse('Unauthorized', { status: 401 })
+    return new NextResponse("Unauthorized", { status: 401 })
   }
   if (!prisma) {
     return NextResponse.json(
-      { error: 'Database not configured' },
+      { error: "Database not configured" },
       { status: 503 }
     )
   }
@@ -56,15 +57,15 @@ export async function POST(request: Request) {
           where: { id: existing.id },
           data: updateData,
         })
-        return { record: updated, previous: existing, action: 'UPDATE' as const }
+        return { record: updated, previous: existing, action: "UPDATE" as const }
       }
       const created = await tx.siteSettings.create({ data: createData })
-      return { record: created, previous: null, action: 'CREATE' as const }
+      return { record: created, previous: null, action: "CREATE" as const }
     })
 
     await recordAudit({
-      actorEmail: session.user?.email,
-      entityType: 'SiteSettings',
+      actorEmail: session.user.email,
+      entityType: "SiteSettings",
       entityId: record.id,
       action,
       diff: buildAuditDiff(previous, record),
@@ -72,22 +73,22 @@ export async function POST(request: Request) {
 
     return NextResponse.json(toSiteSettingsResponse(record))
   } catch (error) {
-    console.error('Failed to persist site settings in footer POST API:', error)
+    console.error("Failed to persist site settings in footer POST API:", error)
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return new NextResponse('Invalid site settings payload', { status: 400 })
+      return new NextResponse("Invalid site settings payload", { status: 400 })
     }
-    return new NextResponse('Internal Server Error', { status: 500 })
+    return new NextResponse("Internal Server Error", { status: 500 })
   }
 }
 
 export async function PUT(request: Request) {
   const session = await getAdminSession()
   if (!session) {
-    return new NextResponse('Unauthorized', { status: 401 })
+    return new NextResponse("Unauthorized", { status: 401 })
   }
   if (!prisma) {
     return NextResponse.json(
-      { error: 'Database not configured' },
+      { error: "Database not configured" },
       { status: 503 }
     )
   }
@@ -104,15 +105,15 @@ export async function PUT(request: Request) {
           where: { id: existing.id },
           data: updateData,
         })
-        return { record: updated, previous: existing, action: 'UPDATE' as const }
+        return { record: updated, previous: existing, action: "UPDATE" as const }
       }
       const created = await tx.siteSettings.create({ data: createData })
-      return { record: created, previous: null, action: 'CREATE' as const }
+      return { record: created, previous: null, action: "CREATE" as const }
     })
 
     await recordAudit({
-      actorEmail: session.user?.email,
-      entityType: 'SiteSettings',
+      actorEmail: session.user.email,
+      entityType: "SiteSettings",
       entityId: record.id,
       action,
       diff: buildAuditDiff(previous, record),
@@ -120,44 +121,44 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(toSiteSettingsResponse(record))
   } catch (error) {
-    console.error('Failed to persist site settings in footer PUT API:', error)
+    console.error("Failed to persist site settings in footer PUT API:", error)
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return new NextResponse('Invalid site settings payload', { status: 400 })
+      return new NextResponse("Invalid site settings payload", { status: 400 })
     }
-    return new NextResponse('Internal Server Error', { status: 500 })
+    return new NextResponse("Internal Server Error", { status: 500 })
   }
 }
 
 export async function DELETE() {
   const session = await getAdminSession()
   if (!session) {
-    return new NextResponse('Unauthorized', { status: 401 })
+    return new NextResponse("Unauthorized", { status: 401 })
   }
   if (!prisma) {
     return NextResponse.json(
-      { error: 'Database not configured' },
+      { error: "Database not configured" },
       { status: 503 }
     )
   }
   try {
     const existing = await prisma.siteSettings.findMany()
     if (existing.length === 0) {
-      return new NextResponse('Not Found', { status: 404 })
+      return new NextResponse("Not Found", { status: 404 })
     }
 
     await prisma.siteSettings.deleteMany()
 
     await recordAudit({
-      actorEmail: session.user?.email,
-      entityType: 'SiteSettings',
-      entityId: 'SiteSettings',
-      action: 'DELETE',
+      actorEmail: session.user.email,
+      entityType: "SiteSettings",
+      entityId: "SiteSettings",
+      action: "DELETE",
       diff: buildAuditDiff(existing, null),
     })
 
     return NextResponse.json({ deleted: true })
   } catch (error) {
-    console.error('Failed to delete site settings in footer DELETE API:', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    console.error("Failed to delete site settings in footer DELETE API:", error)
+    return new NextResponse("Internal Server Error", { status: 500 })
   }
 }

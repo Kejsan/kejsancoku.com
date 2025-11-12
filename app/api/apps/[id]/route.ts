@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { getAdminSession } from '@/lib/auth'
-import { buildAuditDiff, recordAudit } from '@/lib/audit'
+import { NextResponse } from "next/server"
+
+import { buildAuditDiff, recordAudit } from "@/lib/audit"
+import prisma from "@/lib/prisma"
+import { getAdminSession } from "@/lib/auth"
 
 type Params = { params: { id: string } }
 
@@ -37,10 +38,10 @@ export async function PUT(request: Request, { params }: Params) {
   try {
     const app = await prisma.webApp.update({ where: { id }, data })
     await recordAudit({
-      actorEmail: session.user?.email,
-      entityType: 'WebApp',
+      actorEmail: session.user.email,
+      entityType: "WebApp",
       entityId: app.id,
-      action: 'UPDATE',
+      action: "UPDATE",
       diff: buildAuditDiff(existing, app),
     })
     return NextResponse.json(app)
@@ -70,10 +71,10 @@ export async function DELETE(_req: Request, { params }: Params) {
   try {
     await prisma.webApp.delete({ where: { id } })
     await recordAudit({
-      actorEmail: session.user?.email,
-      entityType: 'WebApp',
+      actorEmail: session.user.email,
+      entityType: "WebApp",
       entityId: existing.id,
-      action: 'DELETE',
+      action: "DELETE",
       diff: buildAuditDiff(existing, null),
     })
     return NextResponse.json({ deleted: true })
