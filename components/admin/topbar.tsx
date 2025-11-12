@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { signOut } from "next-auth/react"
-import { useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { useMemo, useTransition } from "react"
 import {
   Bell,
   ChevronDown,
@@ -18,6 +18,7 @@ import { ThemeToggle } from "@/components/admin/theme-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { getSupabaseBrowserClient } from "@/lib/supabaseClient"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,12 +39,15 @@ type AdminTopbarProps = {
 }
 
 export function AdminTopbar({ items, user }: AdminTopbarProps) {
+  const router = useRouter()
+  const supabase = useMemo(() => getSupabaseBrowserClient(), [])
   const [signingOut, startSignOut] = useTransition()
 
   const initials =
     user?.name?.split(" ")
       .map((part) => part[0])
       .join("") || user?.email?.[0]?.toUpperCase() || "A"
+  const displayName = user?.name ?? user?.email ?? "Admin"
 
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full items-center gap-4 border-b bg-background/80 px-4 backdrop-blur">
@@ -102,15 +106,13 @@ export function AdminTopbar({ items, user }: AdminTopbarProps) {
             <Button variant="ghost" className="flex items-center gap-2">
               <Avatar className="h-9 w-9">
                 {user?.image ? (
-                  <AvatarImage src={user.image} alt={user?.name ?? ""} />
+                  <AvatarImage src={user.image} alt={displayName} />
                 ) : (
                   <AvatarFallback>{initials}</AvatarFallback>
                 )}
               </Avatar>
               <div className="hidden flex-col items-start sm:flex">
-                <span className="text-sm font-medium leading-none">
-                  {user?.name ?? "Admin"}
-                </span>
+                <span className="text-sm font-medium leading-none">{displayName}</span>
                 <span className="text-xs text-muted-foreground">
                   {user?.email ?? "Signed in"}
                 </span>
@@ -122,15 +124,13 @@ export function AdminTopbar({ items, user }: AdminTopbarProps) {
             <DropdownMenuLabel className="flex items-center gap-2">
               <Avatar className="h-10 w-10">
                 {user?.image ? (
-                  <AvatarImage src={user.image} alt={user?.name ?? ""} />
+                  <AvatarImage src={user.image} alt={displayName} />
                 ) : (
                   <AvatarFallback>{initials}</AvatarFallback>
                 )}
               </Avatar>
               <div className="space-y-1">
-                <p className="text-sm font-medium leading-none">
-                  {user?.name ?? "Admin"}
-                </p>
+                <p className="text-sm font-medium leading-none">{displayName}</p>
                 <p className="text-xs text-muted-foreground">
                   {user?.email ?? "admin@site"}
                 </p>
@@ -147,7 +147,13 @@ export function AdminTopbar({ items, user }: AdminTopbarProps) {
               onSelect={(event) => {
                 event.preventDefault()
                 startSignOut(() => {
-                  void signOut({ callbackUrl: "/api/auth/signin?callbackUrl=/admin" })
+                  void (async () => {
+                    await supabase.auth.signOut().catch((error) => {
+                      console.error("Failed to sign out of Supabase", error)
+                    })
+                    await fetch("/api/admin/session", { method: "DELETE" }).catch(() => undefined)
+                    router.replace("/admin/login")
+                  })()
                 })
               }}
               disabled={signingOut}

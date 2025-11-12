@@ -2,17 +2,17 @@
 
 ## Authentication setup
 
-This project uses [NextAuth](https://next-auth.js.org/) with GitHub OAuth for the admin section. Configure the following environment variables:
+This project uses Supabase email/password authentication for the admin section. Configure the following environment variables:
 
-- `GITHUB_ID` and `GITHUB_SECRET` – credentials for your GitHub OAuth app.
-- `NEXTAUTH_URL` – the base URL of your deployment.
-- `NEXTAUTH_SECRET` – random string used to sign session tokens.
-- `ADMIN_EMAILS` – comma separated list of GitHub email addresses allowed to access `/admin` and related API routes.
+- `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` – the Supabase project URL (set both to expose the value to the browser).
+- `SUPABASE_ANON_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` – your Supabase anon key (again, set both for browser access).
+- `ADMIN_EMAILS` – comma separated list of Supabase user emails allowed to access `/admin` and related API routes.
+- `NEXT_PUBLIC_ADMIN_EMAIL` (optional) – used to map the `kejsan` username on the login form to a specific email address.
 
-The admin dashboard lives at `/admin` and provides links to manage posts, experiences, apps, work samples, and the site footer.
+The admin dashboard lives at `/admin` and now signs in through `/admin/login`. After a successful Supabase login the app stores a secure, HttpOnly cookie so server actions can continue to enforce admin-only access.
 
 > [!IMPORTANT]
-> For a detailed guide on setting up the environment variables and ensuring your GitHub email is configured correctly for admin access, please see the [Admin Section Setup Guide](./ADMIN_GUIDE.md).
+> For a detailed guide on setting up the environment variables and ensuring your Supabase user is configured correctly for admin access, please see the [Admin Section Setup Guide](./ADMIN_GUIDE.md).
 
 ## Database migrations
 

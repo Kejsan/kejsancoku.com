@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { getAdminSession } from "@/lib/auth"
+
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
+import { getAdminSession } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 
 export async function GET() {
   if (!prisma) {
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
     })
 
     await recordAudit({
-      actorEmail: session.user?.email,
+      actorEmail: session.user.email,
       entityType: "Tool",
       entityId: newTool.id,
       action: "CREATE",

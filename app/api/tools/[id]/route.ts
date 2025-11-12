@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { getAdminSession } from "@/lib/auth"
+
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
+import { getAdminSession } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 
 export async function PUT(
   request: Request,
@@ -37,7 +38,7 @@ export async function PUT(
     })
 
     await recordAudit({
-      actorEmail: session.user?.email,
+      actorEmail: session.user.email,
       entityType: "Tool",
       entityId: updatedTool.id,
       action: "UPDATE",
@@ -79,7 +80,7 @@ export async function DELETE(
     })
 
     await recordAudit({
-      actorEmail: session.user?.email,
+      actorEmail: session.user.email,
       entityType: "Tool",
       entityId: existing.id,
       action: "DELETE",

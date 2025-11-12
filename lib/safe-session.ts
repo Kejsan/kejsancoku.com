@@ -1,10 +1,9 @@
-import type { Session } from "next-auth"
-
+import type { AdminSession } from "./auth"
 import { getAdminSession } from "./auth"
 
 type SafeAdminSessionSuccess = {
   ok: true
-  session: Session
+  session: AdminSession
   error?: undefined
 }
 
