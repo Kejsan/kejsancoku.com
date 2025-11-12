@@ -20,7 +20,8 @@ export default function BlogPostClient({ post }: { post: Post | null }) {
       // Load anime.js dynamically
       const loadAnime = async () => {
         try {
-          const anime = (await import("animejs")).default as any
+          const animeModule = (await import("animejs")) as any
+          const anime = animeModule.default ?? animeModule
 
           anime({
             targets: ".blog-post-header",

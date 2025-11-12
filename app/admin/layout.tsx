@@ -6,13 +6,13 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { AlertTriangle, Loader2 } from "lucide-react"
 
-import { adminNavItems } from "@/app/admin/nav-items"
 import { AdminProviders } from "@/components/admin/providers"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { AdminTopbar } from "@/components/admin/topbar"
 import { Button } from "@/components/ui/button"
 import { getSupabaseBrowserClient } from "@/lib/supabaseClient"
 import type { Session } from "@supabase/supabase-js"
+import { adminNavItems } from "@/app/admin/nav-items"
 
 type AdminLayoutProps = {
   children: ReactNode
