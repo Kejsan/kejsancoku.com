@@ -4,34 +4,29 @@ This guide provides instructions on how to configure your environment to access 
 
 ## 1. Environment Variables
 
-The admin authentication relies on a set of environment variables. You must create a `.env.local` file in the root of your project and add the following variables:
+The admin authentication relies on Supabase. Create a `.env.local` file in the root of your project and add the following variables:
 
--   `GITHUB_ID`: Your GitHub OAuth application's client ID.
--   `GITHUB_SECRET`: Your GitHub OAuth application's client secret.
--   `NEXTAUTH_URL`: The full URL of your website (e.g., `http://localhost:3000` for local development or `https://your-domain.com` for production).
--   `NEXTAUTH_SECRET`: A secret key used to encrypt session cookies. You can generate a random string for this value. A simple way is to run `openssl rand -base64 32` in your terminal.
--   `ADMIN_EMAILS`: A comma-separated list of GitHub email addresses that are allowed to access the admin section. Make sure there are no trailing commas.
+-   `SUPABASE_URL` **and** `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL. Next.js only exposes variables prefixed with `NEXT_PUBLIC` to the browser, so set both values to the same URL.
+-   `SUPABASE_ANON_KEY` **and** `NEXT_PUBLIC_SUPABASE_ANON_KEY`: The Supabase anon key. Again, set both so the browser login client can read the key.
+-   `ADMIN_EMAILS`: A comma-separated list of Supabase user emails that are allowed to access the admin section. There should be no trailing commas.
+-   `NEXT_PUBLIC_ADMIN_EMAIL` (optional): If provided, the login form will resolve the `kejsan` username to this email address before signing in.
 
 ### Example `.env.local` file:
 
 ```
-GITHUB_ID=your_github_client_id
-GITHUB_SECRET=your_github_client_secret
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_random_secret_string
-ADMIN_EMAILS=your.email@example.com,another.admin@example.com
+SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_anon_key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+ADMIN_EMAILS=your.email@example.com
+NEXT_PUBLIC_ADMIN_EMAIL=your.email@example.com
 ```
 
-## 2. GitHub Email Visibility
+## 2. Supabase User Setup
 
-For the login to work, your email address must be public on your GitHub profile. The authentication system needs to read your email address to verify if you are an authorized admin.
+Create (or confirm) a Supabase user account that matches one of the emails listed in `ADMIN_EMAILS`. Disable public sign-ups inside Supabase Authentication settings so only the seeded admin user can log in.
 
-### How to make your email public on GitHub:
-
-1.  Go to your GitHub **Settings**.
-2.  In the "Access" section of the sidebar, click on **Profile**.
-3.  Under "Public profile", find the "Public email" dropdown.
-4.  Select the email address you want to make public. This email must be one of the emails listed in your `ADMIN_EMAILS` environment variable.
+If you want to sign in with a username, add a `profiles` table row for your user with a `username` column set to the desired alias (e.g., `kejsan`) and ensure row level security allows the anon key to read that column. The login form first checks the optional hard-coded mapping and then queries the `profiles` table to resolve the email.
 
 ## 3. Troubleshooting
 
@@ -39,9 +34,9 @@ For the login to work, your email address must be public on your GitHub profile.
 
 If you've followed all the steps and still can't log in, double-check the following:
 
--   **Restart your application:** After creating or modifying the `.env.local` file, you must restart your development server for the changes to take effect.
--   **Correct email:** Ensure the email address you made public on GitHub is the exact same one (case-insensitivity is now handled, but it's good practice to be exact) you added to the `ADMIN_EMAILS` list.
--   **No typos:** Check for any typos in the environment variable names in your `.env.local` file.
--   **GitHub OAuth App:** Make sure your GitHub OAuth application is configured correctly with the right callback URL (`<your_nextauth_url>/api/auth/callback/github`).
+-   **Restart your application:** After updating `.env.local`, restart the development server.
+-   **Allowed email:** Confirm the Supabase account you are using appears in `ADMIN_EMAILS` exactly (comparison is case-insensitive).
+-   **Row Level Security:** Ensure the `profiles` table allows the anon key to read the `email` field when doing username lookups. Alternatively, sign in with the email address directly.
+-   **Cookies cleared:** The browser stores a secure admin cookie for server-side validation. If you change credentials, sign out completely or clear cookies before testing again.
 
 By following this guide, you should be able to resolve any login issues with the admin section.

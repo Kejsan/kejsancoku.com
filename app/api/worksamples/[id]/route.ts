@@ -1,15 +1,15 @@
-import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { buildAuditDiff, recordAudit } from '@/lib/audit'
+import { NextResponse } from "next/server"
+
+import { buildAuditDiff, recordAudit } from "@/lib/audit"
+import prisma from "@/lib/prisma"
+import { getSafeAdminSession } from "@/lib/safe-session"
 
 type Params = { params: { id: string } }
 
 export async function GET(_req: Request, { params }: Params) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return new NextResponse('Unauthorized', { status: 401 })
+  const sessionResult = await getSafeAdminSession()
+  if (!sessionResult.ok || !sessionResult.session) {
+    return new NextResponse("Unauthorized", { status: 401 })
   }
   if (!prisma) {
     return NextResponse.json(
@@ -22,9 +22,9 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return new NextResponse('Unauthorized', { status: 401 })
+  const sessionResult = await getSafeAdminSession()
+  if (!sessionResult.ok || !sessionResult.session) {
+    return new NextResponse("Unauthorized", { status: 401 })
   }
   if (!prisma) {
     return NextResponse.json(
@@ -42,7 +42,7 @@ export async function PUT(request: Request, { params }: Params) {
   try {
     const sample = await prisma.workSample.update({ where: { id }, data })
     await recordAudit({
-      actorEmail: session.user?.email,
+      actorEmail: sessionResult.session.user.email,
       entityType: 'WorkSample',
       entityId: sample.id,
       action: 'UPDATE',
@@ -56,9 +56,9 @@ export async function PUT(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_req: Request, { params }: Params) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return new NextResponse('Unauthorized', { status: 401 })
+  const sessionResult = await getSafeAdminSession()
+  if (!sessionResult.ok || !sessionResult.session) {
+    return new NextResponse("Unauthorized", { status: 401 })
   }
   if (!prisma) {
     return NextResponse.json(
@@ -75,7 +75,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   try {
     await prisma.workSample.delete({ where: { id } })
     await recordAudit({
-      actorEmail: session.user?.email,
+      actorEmail: sessionResult.session.user.email,
       entityType: 'WorkSample',
       entityId: existing.id,
       action: 'DELETE',
