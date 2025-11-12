@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { buildAuditDiff, recordAudit } from '@/lib/audit'
+import { NextResponse } from "next/server"
+
+import { buildAuditDiff, recordAudit } from "@/lib/audit"
+import prisma from "@/lib/prisma"
+import { getSafeAdminSession } from "@/lib/safe-session"
 
 export async function GET() {
   if (!prisma) {
@@ -16,9 +16,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return new NextResponse('Unauthorized', { status: 401 })
+  const sessionResult = await getSafeAdminSession()
+  if (!sessionResult.ok || !sessionResult.session) {
+    return new NextResponse("Unauthorized", { status: 401 })
   }
   if (!prisma) {
     return NextResponse.json(
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   try {
     const experience = await prisma.experience.create({ data })
     await recordAudit({
-      actorEmail: session.user?.email,
+      actorEmail: sessionResult.session.user.email,
       entityType: 'Experience',
       entityId: experience.id,
       action: 'CREATE',

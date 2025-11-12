@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { getAdminSession } from '@/lib/auth'
-import { buildAuditDiff, recordAudit } from '@/lib/audit'
+import { NextResponse } from "next/server"
+
+import { buildAuditDiff, recordAudit } from "@/lib/audit"
+import prisma from "@/lib/prisma"
+import { getAdminSession } from "@/lib/auth"
 
 export async function GET() {
   if (!prisma) {
@@ -29,10 +30,10 @@ export async function POST(request: Request) {
   try {
     const app = await prisma.webApp.create({ data })
     await recordAudit({
-      actorEmail: session.user?.email,
-      entityType: 'WebApp',
+      actorEmail: session.user.email,
+      entityType: "WebApp",
       entityId: app.id,
-      action: 'CREATE',
+      action: "CREATE",
       diff: buildAuditDiff(null, app),
     })
     return NextResponse.json(app)

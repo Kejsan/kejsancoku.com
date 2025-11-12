@@ -32,7 +32,7 @@ async function ensureAdminSession(): Promise<ActionError | { email: string | nul
     }
   }
 
-  return { email: sessionResult.session.user?.email ?? null }
+  return { email: sessionResult.session.user.email }
 }
 
 export async function createExperience(
