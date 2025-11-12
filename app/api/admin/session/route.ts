@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server"
 
-import { adminEmails, buildAdminSessionCookie, clearAdminSessionCookieHeaders } from "@/lib/auth"
+import {
+  adminEmails,
+  buildAdminSessionCookie,
+  clearAdminSessionCookieHeaders,
+  getAdminSession,
+} from "@/lib/auth"
 import { createSupabaseServerClient } from "@/lib/supabaseClient"
 
 export async function POST(request: Request) {
@@ -34,4 +39,14 @@ export async function DELETE() {
   const response = NextResponse.json({ ok: true })
   clearAdminSessionCookieHeaders(response)
   return response
+}
+
+export async function GET() {
+  const session = await getAdminSession()
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  return NextResponse.json({ ok: true })
 }

@@ -68,6 +68,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       }).catch(() => null)
 
       if (!response || !response.ok) {
+        await supabase.auth.signOut().catch((error) => {
+          console.error("Failed to clear Supabase session after admin sync error", error)
+        })
         setAuthState({ status: "unauthorized" })
         router.replace("/admin/login")
         return

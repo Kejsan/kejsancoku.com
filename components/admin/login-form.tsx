@@ -31,15 +31,28 @@ export function AdminLoginForm() {
   useEffect(() => {
     let isMounted = true
 
-    supabase.auth.getSession().then(({ data }) => {
+    void (async () => {
+      const { data } = await supabase.auth.getSession()
+
+      if (!isMounted || !data.session) {
+        return
+      }
+
+      const response = await fetch("/api/admin/session").catch(() => undefined)
+
       if (!isMounted) {
         return
       }
 
-      if (data.session) {
+      if (response?.ok) {
         router.replace("/admin")
+        return
       }
-    })
+
+      await supabase.auth.signOut().catch((error) => {
+        console.error("Failed to clear stale Supabase session", error)
+      })
+    })()
 
     return () => {
       isMounted = false
@@ -135,6 +148,9 @@ export function AdminLoginForm() {
           setError(
             "Signed in with Supabase, but we couldn&apos;t create an admin session cookie. Please try again.",
           )
+          await supabase.auth.signOut().catch((signOutError) => {
+            console.error("Failed to clear Supabase session after cookie error", signOutError)
+          })
           setSubmitting(false)
           return
         }
