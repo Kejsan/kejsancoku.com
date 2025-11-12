@@ -124,7 +124,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border bg-background p-8 text-center shadow-sm">
             <AlertTriangle className="h-12 w-12 text-amber-500" aria-hidden />
             <div className="space-y-1">
-              <h1 className="text-xl font-semibold">We couldn\'t load your admin session</h1>
+              <h1 className="text-xl font-semibold">We couldn&apos;t load your admin session</h1>
               <p className="text-sm text-muted-foreground">
                 Your session may have expired or you might not have access. Please sign in again to continue.
               </p>
