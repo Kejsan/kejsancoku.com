@@ -161,6 +161,7 @@ export function AdminLoginForm() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             accessToken: data.session.access_token,
+            refreshToken: data.session.refresh_token,
             expiresIn: data.session.expires_in,
           }),
         }).catch(() => undefined)

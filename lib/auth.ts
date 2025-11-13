@@ -17,12 +17,29 @@ export type AdminSession = {
 }
 
 const ADMIN_TOKEN_COOKIE = "sb-admin-token"
+const ADMIN_REFRESH_COOKIE = "sb-admin-refresh"
 
 function serializeAdminCookie(value: string, maxAge: number) {
   const parts = [
     `${ADMIN_TOKEN_COOKIE}=${value}`,
     "Path=/",
     `Max-Age=${Math.max(0, Math.floor(maxAge))}`,
+    "SameSite=Lax",
+    "HttpOnly",
+  ]
+
+  if (process.env.NODE_ENV === "production") {
+    parts.push("Secure")
+  }
+
+  return parts.join("; ")
+}
+
+function serializeRefreshCookie(refreshToken: string) {
+  const parts = [
+    `${ADMIN_REFRESH_COOKIE}=${refreshToken}`,
+    "Path=/",
+    `Max-Age=${7 * 24 * 60 * 60}`,
     "SameSite=Lax",
     "HttpOnly",
   ]
@@ -58,12 +75,20 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     const supabase = createSupabaseServerClient()
     const { data, error } = await supabase.auth.getUser(accessToken)
 
-    if (error || !data.user || !data.user.email) {
+    if (error) {
+      // Token might be expired or invalid
+      console.warn("[auth] Token validation failed:", error.message)
+      return null
+    }
+
+    if (!data.user || !data.user.email) {
+      console.warn("[auth] Invalid user data from token")
       return null
     }
 
     const email = data.user.email.toLowerCase()
     if (!adminEmails().includes(email)) {
+      console.warn("[auth] User email not in admin list:", email)
       return null
     }
 
@@ -96,4 +121,8 @@ export function clearAdminSessionCookieHeaders(response: Response) {
 export function buildAdminSessionCookie(accessToken: string, expiresIn?: number) {
   const maxAge = typeof expiresIn === "number" && expiresIn > 0 ? expiresIn : 60 * 60
   return serializeAdminCookie(accessToken, maxAge)
+}
+
+export function buildAdminRefreshCookie(refreshToken: string) {
+  return serializeRefreshCookie(refreshToken)
 }

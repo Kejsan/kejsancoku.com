@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import {
   adminEmails,
   buildAdminSessionCookie,
+  buildAdminRefreshCookie,
   clearAdminSessionCookieHeaders,
   getAdminSession,
 } from "@/lib/auth"
@@ -20,8 +21,9 @@ export async function POST(request: Request) {
     )
   }
 
-  const { accessToken, expiresIn } = (await request.json().catch(() => ({}))) as {
+  const { accessToken, refreshToken, expiresIn } = (await request.json().catch(() => ({}))) as {
     accessToken?: string
+    refreshToken?: string
     expiresIn?: number
   }
 
@@ -44,6 +46,12 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json({ ok: true })
     response.headers.append("Set-Cookie", buildAdminSessionCookie(accessToken, expiresIn))
+    
+    // Also store refresh token for token refresh capability
+    if (refreshToken) {
+      response.headers.append("Set-Cookie", buildAdminRefreshCookie(refreshToken))
+    }
+    
     return response
   } catch (error) {
     console.error("[session-api] POST error:", error instanceof Error ? error.message : error)
@@ -68,11 +76,19 @@ export async function GET() {
     )
   }
 
-  const session = await getAdminSession()
+  try {
+    const session = await getAdminSession()
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error("[session-api] GET error:", error instanceof Error ? error.message : error)
+    return NextResponse.json(
+      { error: "Failed to validate session" },
+      { status: 401 }
+    )
   }
-
-  return NextResponse.json({ ok: true })
 }
