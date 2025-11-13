@@ -1,6 +1,10 @@
 import { cookies } from "next/headers"
 
-import { createSupabaseServerClient } from "@/lib/supabaseClient"
+import {
+  SUPABASE_CONFIG_ERROR_MESSAGE,
+  createSupabaseServerClient,
+  isSupabaseConfigured,
+} from "@/lib/supabaseClient"
 
 export type AdminSession = {
   user: {
@@ -38,6 +42,11 @@ export function adminEmails() {
 }
 
 export async function getAdminSession(): Promise<AdminSession | null> {
+  if (!isSupabaseConfigured) {
+    console.warn(`[auth] ${SUPABASE_CONFIG_ERROR_MESSAGE}`)
+    return null
+  }
+
   const cookieStore = cookies()
   const accessToken = cookieStore.get(ADMIN_TOKEN_COOKIE)?.value
 

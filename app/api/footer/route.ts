@@ -5,6 +5,10 @@ import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import { getAdminSession } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { sanitizeSiteSettingsPayload, toSiteSettingsResponse } from "@/lib/site-settings"
+import {
+  SUPABASE_CONFIG_ERROR_MESSAGE,
+  isSupabaseConfigured,
+} from "@/lib/supabaseClient"
 
 export async function GET() {
   if (!prisma) {
@@ -34,6 +38,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!isSupabaseConfigured) {
+    return NextResponse.json(
+      { error: SUPABASE_CONFIG_ERROR_MESSAGE },
+      { status: 503 },
+    )
+  }
+
   const session = await getAdminSession()
   if (!session) {
     return new NextResponse("Unauthorized", { status: 401 })
@@ -82,6 +93,13 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  if (!isSupabaseConfigured) {
+    return NextResponse.json(
+      { error: SUPABASE_CONFIG_ERROR_MESSAGE },
+      { status: 503 },
+    )
+  }
+
   const session = await getAdminSession()
   if (!session) {
     return new NextResponse("Unauthorized", { status: 401 })
@@ -130,6 +148,13 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE() {
+  if (!isSupabaseConfigured) {
+    return NextResponse.json(
+      { error: SUPABASE_CONFIG_ERROR_MESSAGE },
+      { status: 503 },
+    )
+  }
+
   const session = await getAdminSession()
   if (!session) {
     return new NextResponse("Unauthorized", { status: 401 })

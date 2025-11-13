@@ -7,21 +7,22 @@ const supabaseAnonKey =
   process.env.SUPABASE_ANON_KEY ??
   ""
 
-if (!supabaseUrl) {
-  throw new Error(
-    "Supabase URL is not configured. Set NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL.",
-  )
-}
+export const SUPABASE_CONFIG_ERROR_MESSAGE =
+  "Supabase environment variables are not configured. Set NEXT_PUBLIC_SUPABASE_URL/SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY/SUPABASE_ANON_KEY."
 
-if (!supabaseAnonKey) {
-  throw new Error(
-    "Supabase anon key is not configured. Set NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY.",
-  )
-}
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
 let browserClient: SupabaseClient | null = null
 
+function ensureSupabaseConfigured() {
+  if (!isSupabaseConfigured) {
+    throw new Error(SUPABASE_CONFIG_ERROR_MESSAGE)
+  }
+}
+
 export function getSupabaseBrowserClient() {
+  ensureSupabaseConfigured()
+
   if (!browserClient) {
     browserClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
@@ -35,6 +36,8 @@ export function getSupabaseBrowserClient() {
 }
 
 export function createSupabaseServerClient() {
+  ensureSupabaseConfigured()
+
   return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: false,

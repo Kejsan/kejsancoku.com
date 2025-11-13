@@ -3,6 +3,10 @@ import { NextResponse } from "next/server"
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import prisma from "@/lib/prisma"
 import { getAdminSession } from "@/lib/auth"
+import {
+  SUPABASE_CONFIG_ERROR_MESSAGE,
+  isSupabaseConfigured,
+} from "@/lib/supabaseClient"
 
 type Params = { params: { id: string } }
 
@@ -18,6 +22,13 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
+  if (!isSupabaseConfigured) {
+    return NextResponse.json(
+      { error: SUPABASE_CONFIG_ERROR_MESSAGE },
+      { status: 503 },
+    )
+  }
+
   const session = await getAdminSession()
   if (!session) {
     return new NextResponse('Unauthorized', { status: 401 })
@@ -52,6 +63,13 @@ export async function PUT(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_req: Request, { params }: Params) {
+  if (!isSupabaseConfigured) {
+    return NextResponse.json(
+      { error: SUPABASE_CONFIG_ERROR_MESSAGE },
+      { status: 503 },
+    )
+  }
+
   const session = await getAdminSession()
   if (!session) {
     return new NextResponse('Unauthorized', { status: 401 })

@@ -18,7 +18,10 @@ import { ThemeToggle } from "@/components/admin/theme-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { getSupabaseBrowserClient } from "@/lib/supabaseClient"
+import {
+  getSupabaseBrowserClient,
+  isSupabaseConfigured,
+} from "@/lib/supabaseClient"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +43,11 @@ type AdminTopbarProps = {
 
 export function AdminTopbar({ items, user }: AdminTopbarProps) {
   const router = useRouter()
-  const supabase = useMemo(() => getSupabaseBrowserClient(), [])
+  const supabaseConfigured = isSupabaseConfigured
+  const supabase = useMemo(
+    () => (supabaseConfigured ? getSupabaseBrowserClient() : null),
+    [supabaseConfigured],
+  )
   const [signingOut, startSignOut] = useTransition()
 
   const initials =
@@ -148,9 +155,11 @@ export function AdminTopbar({ items, user }: AdminTopbarProps) {
                 event.preventDefault()
                 startSignOut(() => {
                   void (async () => {
-                    await supabase.auth.signOut().catch((error) => {
-                      console.error("Failed to sign out of Supabase", error)
-                    })
+                    if (supabase) {
+                      await supabase.auth.signOut().catch((error) => {
+                        console.error("Failed to sign out of Supabase", error)
+                      })
+                    }
                     await fetch("/api/admin/session", { method: "DELETE" }).catch(() => undefined)
                     router.replace("/admin/login")
                   })()
