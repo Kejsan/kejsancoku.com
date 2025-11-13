@@ -29,21 +29,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing access token" }, { status: 400 })
   }
 
-  const supabase = createSupabaseServerClient()
-  const { data, error } = await supabase.auth.getUser(accessToken)
+  try {
+    const supabase = createSupabaseServerClient()
+    const { data, error } = await supabase.auth.getUser(accessToken)
 
-  if (error || !data.user || !data.user.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (error || !data.user || !data.user.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const email = data.user.email.toLowerCase()
+    if (!adminEmails().includes(email)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const response = NextResponse.json({ ok: true })
+    response.headers.append("Set-Cookie", buildAdminSessionCookie(accessToken, expiresIn))
+    return response
+  } catch (error) {
+    console.error("[session-api] POST error:", error instanceof Error ? error.message : error)
+    return NextResponse.json(
+      { error: "Failed to verify credentials" },
+      { status: 500 }
+    )
   }
-
-  const email = data.user.email.toLowerCase()
-  if (!adminEmails().includes(email)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  const response = NextResponse.json({ ok: true })
-  response.headers.append("Set-Cookie", buildAdminSessionCookie(accessToken, expiresIn))
-  return response
 }
 
 export async function DELETE() {

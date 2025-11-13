@@ -47,40 +47,45 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     return null
   }
 
-  const cookieStore = cookies()
-  const accessToken = cookieStore.get(ADMIN_TOKEN_COOKIE)?.value
+  try {
+    const cookieStore = cookies()
+    const accessToken = cookieStore.get(ADMIN_TOKEN_COOKIE)?.value
 
-  if (!accessToken) {
+    if (!accessToken) {
+      return null
+    }
+
+    const supabase = createSupabaseServerClient()
+    const { data, error } = await supabase.auth.getUser(accessToken)
+
+    if (error || !data.user || !data.user.email) {
+      return null
+    }
+
+    const email = data.user.email.toLowerCase()
+    if (!adminEmails().includes(email)) {
+      return null
+    }
+
+    const metadata = (data.user.user_metadata ?? {}) as {
+      full_name?: string
+      name?: string
+      username?: string
+      avatar_url?: string
+    }
+
+    return {
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        name: metadata.full_name ?? metadata.name ?? null,
+        username: metadata.username ?? null,
+        image: metadata.avatar_url ?? null,
+      },
+    }
+  } catch (error) {
+    console.error("[auth] Failed to get admin session:", error instanceof Error ? error.message : error)
     return null
-  }
-
-  const supabase = createSupabaseServerClient()
-  const { data, error } = await supabase.auth.getUser(accessToken)
-
-  if (error || !data.user || !data.user.email) {
-    return null
-  }
-
-  const email = data.user.email.toLowerCase()
-  if (!adminEmails().includes(email)) {
-    return null
-  }
-
-  const metadata = (data.user.user_metadata ?? {}) as {
-    full_name?: string
-    name?: string
-    username?: string
-    avatar_url?: string
-  }
-
-  return {
-    user: {
-      id: data.user.id,
-      email: data.user.email,
-      name: metadata.full_name ?? metadata.name ?? null,
-      username: metadata.username ?? null,
-      image: metadata.avatar_url ?? null,
-    },
   }
 }
 
