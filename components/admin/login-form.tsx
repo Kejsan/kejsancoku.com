@@ -8,7 +8,11 @@ import { AlertCircle, ArrowLeft, Loader2, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getSupabaseBrowserClient } from "@/lib/supabaseClient"
+import {
+  SUPABASE_CONFIG_ERROR_MESSAGE,
+  getSupabaseBrowserClient,
+  isSupabaseConfigured,
+} from "@/lib/supabaseClient"
 
 const configuredAdminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL
 
@@ -22,13 +26,21 @@ type UsernameLookupResult = {
 
 export function AdminLoginForm() {
   const router = useRouter()
-  const supabase = useMemo(() => getSupabaseBrowserClient(), [])
+  const supabaseConfigured = isSupabaseConfigured
+  const supabase = useMemo(
+    () => (supabaseConfigured ? getSupabaseBrowserClient() : null),
+    [supabaseConfigured],
+  )
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!supabase) {
+      return
+    }
+
     let isMounted = true
 
     void (async () => {
@@ -61,6 +73,10 @@ export function AdminLoginForm() {
 
   const resolveEmail = useCallback(
     async (value: string) => {
+      if (!supabase) {
+        throw new Error(SUPABASE_CONFIG_ERROR_MESSAGE)
+      }
+
       const trimmed = value.trim()
       if (!trimmed) {
         return null
@@ -102,6 +118,11 @@ export function AdminLoginForm() {
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
       setError(null)
+
+      if (!supabase) {
+        setError(SUPABASE_CONFIG_ERROR_MESSAGE)
+        return
+      }
 
       if (!identifier.trim() || !password.trim()) {
         setError("Please enter both your email or username and your password.")
@@ -169,6 +190,20 @@ export function AdminLoginForm() {
     },
     [identifier, password, resolveEmail, router, supabase],
   )
+
+  if (!supabase) {
+    return (
+      <div className="mx-auto flex w-full max-w-md flex-col gap-6 rounded-xl border bg-background/80 p-8 text-center shadow-sm backdrop-blur">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Supabase configuration required</h1>
+          <p className="text-sm text-muted-foreground">{SUPABASE_CONFIG_ERROR_MESSAGE}</p>
+        </div>
+        <Button asChild variant="outline">
+          <Link href="/">Return home</Link>
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6 rounded-xl border bg-background/80 p-8 shadow-sm backdrop-blur">

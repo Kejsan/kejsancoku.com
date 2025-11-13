@@ -10,7 +10,11 @@ import { AdminProviders } from "@/components/admin/providers"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { AdminTopbar } from "@/components/admin/topbar"
 import { Button } from "@/components/ui/button"
-import { getSupabaseBrowserClient } from "@/lib/supabaseClient"
+import {
+  SUPABASE_CONFIG_ERROR_MESSAGE,
+  getSupabaseBrowserClient,
+  isSupabaseConfigured,
+} from "@/lib/supabaseClient"
 import type { Session } from "@supabase/supabase-js"
 import { adminNavItems } from "@/app/admin/nav-items"
 
@@ -34,10 +38,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const isLoginRoute = pathname?.startsWith("/admin/login") ?? false
+  const supabaseConfigured = isSupabaseConfigured
   const [authState, setAuthState] = useState<AuthState>({ status: "loading" })
 
   useEffect(() => {
-    if (isLoginRoute) {
+    if (isLoginRoute || !supabaseConfigured) {
       return
     }
 
@@ -100,9 +105,32 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       isMounted = false
       subscription.unsubscribe()
     }
-  }, [isLoginRoute, router])
+  }, [isLoginRoute, router, supabaseConfigured])
 
   const content = useMemo(() => {
+    if (!supabaseConfigured) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-muted/30 px-6 py-12">
+          <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border bg-background p-8 text-center shadow-sm">
+            <AlertTriangle className="h-12 w-12 text-amber-500" aria-hidden />
+            <div className="space-y-1">
+              <h1 className="text-xl font-semibold">Supabase configuration required</h1>
+              <p className="text-sm text-muted-foreground">
+                {SUPABASE_CONFIG_ERROR_MESSAGE}
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button asChild>
+                <Link href="/">
+                  Go back home
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     if (isLoginRoute) {
       return children
     }
@@ -153,7 +181,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </div>
     )
-  }, [authState, children, isLoginRoute])
+  }, [authState, children, isLoginRoute, supabaseConfigured])
 
   return <AdminProviders>{content}</AdminProviders>
 }

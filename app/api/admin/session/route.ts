@@ -6,9 +6,20 @@ import {
   clearAdminSessionCookieHeaders,
   getAdminSession,
 } from "@/lib/auth"
-import { createSupabaseServerClient } from "@/lib/supabaseClient"
+import {
+  SUPABASE_CONFIG_ERROR_MESSAGE,
+  createSupabaseServerClient,
+  isSupabaseConfigured,
+} from "@/lib/supabaseClient"
 
 export async function POST(request: Request) {
+  if (!isSupabaseConfigured) {
+    return NextResponse.json(
+      { error: SUPABASE_CONFIG_ERROR_MESSAGE },
+      { status: 503 },
+    )
+  }
+
   const { accessToken, expiresIn } = (await request.json().catch(() => ({}))) as {
     accessToken?: string
     expiresIn?: number
@@ -42,6 +53,13 @@ export async function DELETE() {
 }
 
 export async function GET() {
+  if (!isSupabaseConfigured) {
+    return NextResponse.json(
+      { error: SUPABASE_CONFIG_ERROR_MESSAGE },
+      { status: 503 },
+    )
+  }
+
   const session = await getAdminSession()
 
   if (!session) {

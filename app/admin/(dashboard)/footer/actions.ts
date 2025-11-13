@@ -6,6 +6,10 @@ import { z } from "zod"
 import { getAdminSession } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { sanitizeSiteSettingsPayload, toSiteSettingsResponse } from "@/lib/site-settings"
+import {
+  SUPABASE_CONFIG_ERROR_MESSAGE,
+  isSupabaseConfigured,
+} from "@/lib/supabaseClient"
 import type { Prisma } from "@prisma/client"
 
 function isValidUrl(value: string) {
@@ -111,6 +115,10 @@ export const emptyFooterFormValues: FooterFormValues = {
 }
 
 export async function saveFooterSettings(values: FooterFormValues) {
+  if (!isSupabaseConfigured) {
+    throw new Error(SUPABASE_CONFIG_ERROR_MESSAGE)
+  }
+
   const session = await getAdminSession()
 
   if (!session) {
