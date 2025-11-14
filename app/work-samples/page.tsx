@@ -4,13 +4,12 @@ import { useEffect, useMemo, useState } from "react"
 import { ExternalLink, ChevronUp, TrendingUp, Users, FileText, Globe, Loader2 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
-import type { SiteSettings } from "@prisma/client"
-import type { SiteSettingsResponse } from "@/types/site-settings"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import PageLayout from "@/components/layout/page-layout"
 import PageHero from "@/components/sections/page-hero"
 import PageCta from "@/components/sections/page-cta"
+import { STATIC_SITE_SETTINGS } from "@/lib/static-site-settings"
 
 type WorkSampleStat = {
   label: string
@@ -41,7 +40,6 @@ type WorkSample = {
 
 export default function WorkSamples() {
   const [showScrollTop, setShowScrollTop] = useState(false)
-  const [settings, setSettings] = useState<SiteSettings | null>(null)
   const [workSamples, setWorkSamples] = useState<WorkSample[]>([])
   const [isLoadingSamples, setIsLoadingSamples] = useState(true)
   const [samplesError, setSamplesError] = useState<string | null>(null)
@@ -90,15 +88,6 @@ export default function WorkSamples() {
   }, [])
 
   useEffect(() => {
-    fetch("/api/footer")
-      .then((res) => res.json())
-      .then((payload: SiteSettingsResponse) => setSettings(payload.settings))
-      .catch((error) => {
-        console.error("Failed to load footer settings", error)
-      })
-  }, [])
-
-  useEffect(() => {
     let isMounted = true
 
     const fetchWorkSamples = async () => {
@@ -136,7 +125,9 @@ export default function WorkSamples() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  const emailHref = settings?.email ? `mailto:${settings.email}` : null
+  const emailHref = STATIC_SITE_SETTINGS.email
+    ? `mailto:${STATIC_SITE_SETTINGS.email}`
+    : null
 
   const iconMap = useMemo<Record<string, LucideIcon>>(
     () => ({
@@ -154,8 +145,8 @@ export default function WorkSamples() {
     [],
   )
 
-  const scrollButtonLabel = settings?.email
-    ? `Scroll to top and contact ${settings.email}`
+  const scrollButtonLabel = STATIC_SITE_SETTINGS.email
+    ? `Scroll to top and contact ${STATIC_SITE_SETTINGS.email}`
     : "Scroll to top"
 
   return (
