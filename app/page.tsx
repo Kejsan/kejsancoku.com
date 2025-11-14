@@ -3,9 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { ChevronUp } from "lucide-react"
-import type { SiteSettings } from "@prisma/client"
-import type { SiteSettingsResponse } from "@/types/site-settings"
 import { NAV_LINKS } from "@/lib/navigation-links"
+import { STATIC_SITE_SETTINGS } from "@/lib/static-site-settings"
 
 import HeroSection from "@/components/sections/hero-section"
 import AboutSection from "@/components/sections/about-section"
@@ -20,9 +19,6 @@ export default function Portfolio() {
   const experienceRef = useRef<HTMLDivElement>(null)
   const blogRef = useRef<HTMLDivElement>(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
-  const [settings, setSettings] = useState<SiteSettings | null>(null)
-  const [settingsError, setSettingsError] = useState<string | null>(null)
-  const [isLoadingSettings, setIsLoadingSettings] = useState<boolean>(true)
 
   useEffect(() => {
     // Load anime.js dynamically
@@ -150,47 +146,6 @@ export default function Portfolio() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  useEffect(() => {
-    let isMounted = true
-
-    const loadSettings = async () => {
-      try {
-        setIsLoadingSettings(true)
-        const response = await fetch("/api/footer")
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch footer settings: ${response.status}`)
-        }
-
-        const payload: SiteSettingsResponse = await response.json()
-
-        if (!isMounted) {
-          return
-        }
-
-        setSettings(payload.settings)
-        setSettingsError(null)
-      } catch (error) {
-        console.error("Failed to load footer settings", error)
-        if (!isMounted) {
-          return
-        }
-        setSettings(null)
-        setSettingsError("We're unable to load contact details right now.")
-      } finally {
-        if (isMounted) {
-          setIsLoadingSettings(false)
-        }
-      }
-    }
-
-    void loadSettings()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
@@ -202,8 +157,10 @@ export default function Portfolio() {
     }
   }
 
-  const scrollButtonLabel = settings?.email
-    ? `Scroll to top and contact ${settings.email}`
+  const brandName = STATIC_SITE_SETTINGS.brandName || "Kejsan"
+  const contactEmail = STATIC_SITE_SETTINGS.email
+  const scrollButtonLabel = contactEmail
+    ? `Scroll to top and contact ${contactEmail}`
     : "Scroll to top"
 
   return (
@@ -212,7 +169,7 @@ export default function Portfolio() {
       <nav className="fixed top-0 w-full z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="text-white font-bold text-xl">{settings?.brandName || "Kejsan"}</div>
+            <div className="text-white font-bold text-xl">{brandName}</div>
             <div className="hidden md:flex space-x-8">
               {NAV_LINKS.map((link) => {
                 if (link.href.startsWith("/#")) {
@@ -254,7 +211,7 @@ export default function Portfolio() {
 
       <NewsletterSection />
 
-      <ContactSection settings={settings} isLoading={isLoadingSettings} error={settingsError} />
+      <ContactSection settings={STATIC_SITE_SETTINGS} />
 
       {/* Scroll to Top Button */}
       {showScrollTop && (

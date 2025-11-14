@@ -4,13 +4,9 @@ import Script from "next/script"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import NewsletterPopup from "@/components/newsletter-popup"
-import FooterSection from "@/components/sections/footer-section"
-import prisma from "@/lib/prisma"
-import { Prisma, type SiteSettings, type WebApp } from "@prisma/client"
+import StaticFooter from "@/components/layout/static-footer"
 
 const inter = Inter({ subsets: ["latin"] })
-
-export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
   title: "Kejsan - Digital Marketing Specialist",
@@ -19,89 +15,11 @@ export const metadata: Metadata = {
   generator: "v0.app",
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  let settings: SiteSettings | null = null
-  let apps: WebApp[] = []
-
-  if (!prisma) {
-    console.warn("Prisma client unavailable. Falling back to default layout data.")
-  } else {
-    const [settingsResult, appsResult] = await Promise.allSettled([
-      prisma.siteSettings.findFirst(),
-      prisma.webApp.findMany(),
-    ])
-
-    const applySettledResult = <T,>(
-      result: PromiseSettledResult<T>,
-      onFulfilled: (value: T) => void,
-      onFallback: () => void,
-      context: string,
-    ) => {
-      if (result.status === "fulfilled") {
-        onFulfilled(result.value)
-        return
-      }
-
-      const { reason } = result
-
-      if (
-        reason instanceof Prisma.PrismaClientKnownRequestError ||
-        reason instanceof Prisma.PrismaClientUnknownRequestError ||
-        reason instanceof Prisma.PrismaClientRustPanicError ||
-        reason instanceof Prisma.PrismaClientInitializationError ||
-        reason instanceof Prisma.PrismaClientValidationError
-      ) {
-        const isRecordNotFound =
-          reason instanceof Prisma.PrismaClientKnownRequestError &&
-          reason.code === "P2025"
-
-        console.error(
-          `${context}${isRecordNotFound ? " (record not found)" : ""}:`,
-          reason,
-        )
-        onFallback()
-        return
-      }
-
-      if (
-        reason instanceof Error &&
-        typeof (reason as { clientVersion?: unknown }).clientVersion === "string"
-      ) {
-        console.error(`${context}: Unexpected Prisma error`, reason)
-        onFallback()
-        return
-      }
-
-      throw reason
-    }
-
-    applySettledResult(
-      settingsResult,
-      (value) => {
-        settings = value
-      },
-      () => {
-        settings = null
-      },
-      "Failed to load site settings",
-    )
-
-    applySettledResult(
-      appsResult,
-      (value) => {
-        apps = value
-      },
-      () => {
-        apps = []
-      },
-      "Failed to load web apps",
-    )
-  }
-
   return (
     <html lang="en" className={inter.className}>
       <head>
@@ -125,7 +43,7 @@ export default async function RootLayout({
       </head>
       <body>
         {children}
-        <FooterSection settings={settings} apps={apps} />
+        <StaticFooter />
         <NewsletterPopup />
       </body>
     </html>
