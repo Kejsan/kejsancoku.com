@@ -10,8 +10,14 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description: "Database connection is not configured.",
     }
   }
-  const post = await prisma.post.findUnique({
-    where: { slug: params.slug, status: "PUBLISHED" },
+  const now = new Date()
+  const post = await prisma.post.findFirst({
+    where: {
+      slug: params.slug,
+      status: "PUBLISHED",
+      published: true,
+      publishedAt: { not: null, lte: now },
+    },
   })
 
   if (!post) {
@@ -31,8 +37,14 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     console.warn('Prisma client unavailable while rendering blog post page.')
     return <BlogPostClient post={null} />
   }
-  const post = await prisma.post.findUnique({
-    where: { slug: params.slug, status: "PUBLISHED" },
+  const now = new Date()
+  const post = await prisma.post.findFirst({
+    where: {
+      slug: params.slug,
+      status: "PUBLISHED",
+      published: true,
+      publishedAt: { not: null, lte: now },
+    },
   })
 
   return <BlogPostClient post={post} />

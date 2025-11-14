@@ -14,10 +14,8 @@ export async function GET() {
   const posts = await prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
-      OR: [
-        { publishedAt: null },
-        { publishedAt: { lte: now } },
-      ],
+      published: true,
+      publishedAt: { not: null, lte: now },
     },
     orderBy: [
       { publishedAt: 'desc' },
