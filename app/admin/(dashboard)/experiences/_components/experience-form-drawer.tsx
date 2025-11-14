@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -104,10 +105,10 @@ export function ExperienceFormDrawer({
             />
             <FormField
               control={form.control}
-              name="role"
+              name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel>Title</FormLabel>
                   <FormControl>
                     <Input placeholder="Senior Engineer" {...field} />
                   </FormControl>
@@ -115,6 +116,34 @@ export function ExperienceFormDrawer({
                 </FormItem>
               )}
             />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="period"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Period</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Jan 2022 – Present" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Remote / City, Country" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
@@ -153,6 +182,126 @@ export function ExperienceFormDrawer({
                     <Textarea
                       placeholder="Share highlights, responsibilities, and notable achievements."
                       className="min-h-[120px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="fullDescription"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Detailed overview</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Provide a narrative summary for the modal view."
+                      className="min-h-[150px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="achievements"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Key achievements</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={"One achievement per line"}
+                      className="min-h-[120px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>Displayed prominently in the experience cards.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="responsibilities"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Responsibilities</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={"One responsibility per line"}
+                      className="min-h-[120px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>Shown when no detailed progression entries are provided.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="skills"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Skills &amp; technologies</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={"One skill per line"}
+                      className="min-h-[120px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="careerProgression"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Career progression (JSON)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder='[
+  {
+    "title": "Lead Engineer",
+    "period": "2023",
+    "type": "promotion",
+    "description": "Role description",
+    "responsibilities": ["..."],
+    "skills": ["..."]
+  }
+]'
+                      className="font-mono text-sm min-h-[200px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Optional structured roles for the detailed modal. Leave blank to use responsibilities instead.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="previousRole"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Previous role highlight (JSON)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder='{
+  "title": "Associate Engineer",
+  "period": "2021",
+  "note": "Promoted after leading a critical launch"
+}'
+                      className="font-mono text-sm min-h-[160px]"
                       {...field}
                     />
                   </FormControl>

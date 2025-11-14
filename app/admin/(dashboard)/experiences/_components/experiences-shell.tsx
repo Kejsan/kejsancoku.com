@@ -25,15 +25,31 @@ import {
 } from "../actions"
 import { experienceFormSchema, type ExperienceFormValues } from "../schema"
 import type { SerializedExperience } from "../serializers"
+import {
+  formatCareerProgressionForForm,
+  formatMultilineForForm,
+  formatPreviousRoleForForm,
+  parseCareerProgressionJson,
+  parsePreviousRoleJson,
+  splitMultiline,
+} from "../parsers"
 import { ExperienceFormDrawer, type ExperienceFormDrawerMode } from "./experience-form-drawer"
 import { createExperienceColumns, type ExperienceRow } from "./experience-columns"
 
 const EMPTY_FORM: ExperienceFormValues = {
   company: "",
-  role: "",
+  title: "",
+  period: "",
+  location: "",
   startDate: "",
   endDate: "",
   description: "",
+  achievements: "",
+  fullDescription: "",
+  responsibilities: "",
+  skills: "",
+  careerProgression: "",
+  previousRole: "",
 }
 
 type DrawerState = {
@@ -93,15 +109,44 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
         return
       }
 
+      const achievements = splitMultiline(parsed.data.achievements)
+      const responsibilities = splitMultiline(parsed.data.responsibilities)
+      const skills = splitMultiline(parsed.data.skills)
+      const careerProgression = parseCareerProgressionJson(parsed.data.careerProgression)
+      if (!careerProgression.ok) {
+        toast.error(careerProgression.message)
+        return
+      }
+      const previousRole = parsePreviousRoleJson(parsed.data.previousRole)
+      if (!previousRole.ok) {
+        toast.error(previousRole.message)
+        return
+      }
+
+      const now = new Date()
       const placeholder: ExperienceRow = {
         id: -Math.floor(Math.random() * 1_000_000),
-        company: parsed.data.company,
-        role: parsed.data.role,
+        company: parsed.data.company.trim(),
+        title: parsed.data.title.trim(),
+        period: parsed.data.period?.trim() ? parsed.data.period.trim() : null,
+        location: parsed.data.location?.trim() ? parsed.data.location.trim() : null,
         startDate: new Date(parsed.data.startDate).toISOString(),
-        endDate: parsed.data.endDate ? new Date(parsed.data.endDate).toISOString() : null,
-        description: parsed.data.description?.length ? parsed.data.description : null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        endDate: parsed.data.endDate?.trim()
+          ? new Date(parsed.data.endDate).toISOString()
+          : null,
+        description: parsed.data.description?.trim()?.length
+          ? parsed.data.description.trim()
+          : null,
+        achievements,
+        fullDescription: parsed.data.fullDescription?.trim()?.length
+          ? parsed.data.fullDescription.trim()
+          : null,
+        responsibilities,
+        skills,
+        careerProgression: careerProgression.data,
+        previousRole: previousRole.data,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
       }
 
       const snapshot = experiencesRef.current
@@ -142,16 +187,44 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
         return
       }
 
+      const achievements = splitMultiline(parsed.data.achievements)
+      const responsibilities = splitMultiline(parsed.data.responsibilities)
+      const skills = splitMultiline(parsed.data.skills)
+      const careerProgression = parseCareerProgressionJson(parsed.data.careerProgression)
+      if (!careerProgression.ok) {
+        toast.error(careerProgression.message)
+        return
+      }
+      const previousRole = parsePreviousRoleJson(parsed.data.previousRole)
+      if (!previousRole.ok) {
+        toast.error(previousRole.message)
+        return
+      }
+
       const snapshot = experiencesRef.current
       const optimistic = snapshot.map((experience) =>
         experience.id === drawerState.experience?.id
           ? {
               ...experience,
-              company: parsed.data.company,
-              role: parsed.data.role,
+              company: parsed.data.company.trim(),
+              title: parsed.data.title.trim(),
+              period: parsed.data.period?.trim() ? parsed.data.period.trim() : null,
+              location: parsed.data.location?.trim() ? parsed.data.location.trim() : null,
               startDate: new Date(parsed.data.startDate).toISOString(),
-              endDate: parsed.data.endDate ? new Date(parsed.data.endDate).toISOString() : null,
-              description: parsed.data.description?.length ? parsed.data.description : null,
+              endDate: parsed.data.endDate?.trim()
+                ? new Date(parsed.data.endDate).toISOString()
+                : null,
+              description: parsed.data.description?.trim()?.length
+                ? parsed.data.description.trim()
+                : null,
+              achievements,
+              fullDescription: parsed.data.fullDescription?.trim()?.length
+                ? parsed.data.fullDescription.trim()
+                : null,
+              responsibilities,
+              skills,
+              careerProgression: careerProgression.data,
+              previousRole: previousRole.data,
               updatedAt: new Date().toISOString(),
             }
           : experience,
@@ -281,10 +354,18 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
     const experience = drawerState.experience!
     return {
       company: experience.company ?? "",
-      role: experience.role ?? "",
+      title: experience.title ?? "",
+      period: experience.period ?? "",
+      location: experience.location ?? "",
       startDate: toDateInputValue(experience.startDate),
       endDate: toDateInputValue(experience.endDate),
       description: experience.description ?? "",
+      fullDescription: experience.fullDescription ?? "",
+      achievements: formatMultilineForForm(experience.achievements),
+      responsibilities: formatMultilineForForm(experience.responsibilities),
+      skills: formatMultilineForForm(experience.skills),
+      careerProgression: formatCareerProgressionForForm(experience.careerProgression),
+      previousRole: formatPreviousRoleForForm(experience.previousRole),
     }
   }, [drawerState])
 

@@ -2,11 +2,18 @@
 
 import { revalidatePath } from "next/cache"
 
+import type { CareerProgression, PreviousRole } from "@/types/experience"
+
 import {
   experienceFormSchema,
   type ExperienceFormValues,
 } from "./schema"
 import { serializeExperience } from "./serializers"
+import {
+  parseCareerProgressionJson,
+  parsePreviousRoleJson,
+  splitMultiline,
+} from "./parsers"
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import { prisma } from "@/lib/prisma"
 import { getSafeAdminSession } from "@/lib/safe-session"
@@ -22,6 +29,59 @@ type ActionSuccess<T> = {
 }
 
 type ActionResult<T> = ActionError | ActionSuccess<T>
+
+type ExperiencePayload = {
+  company: string
+  title: string
+  period: string | null
+  location: string | null
+  startDate: Date
+  endDate: Date | null
+  description: string | null
+  achievements: string[]
+  fullDescription: string | null
+  responsibilities: string[]
+  skills: string[]
+  careerProgression: CareerProgression[] | null
+  previousRole: PreviousRole | null
+}
+
+function buildExperienceData(input: ExperienceFormValues): ActionResult<ExperiencePayload> {
+  const achievements = splitMultiline(input.achievements)
+  const responsibilities = splitMultiline(input.responsibilities)
+  const skills = splitMultiline(input.skills)
+
+  const careerProgressionResult = parseCareerProgressionJson(input.careerProgression)
+  if (!careerProgressionResult.ok) {
+    return { ok: false, message: careerProgressionResult.message }
+  }
+
+  const previousRoleResult = parsePreviousRoleJson(input.previousRole)
+  if (!previousRoleResult.ok) {
+    return { ok: false, message: previousRoleResult.message }
+  }
+
+  return {
+    ok: true,
+    data: {
+      company: input.company.trim(),
+      title: input.title.trim(),
+      period: input.period?.trim() ? input.period.trim() : null,
+      location: input.location?.trim() ? input.location.trim() : null,
+      startDate: new Date(input.startDate),
+      endDate: input.endDate?.trim() ? new Date(input.endDate) : null,
+      description: input.description?.trim() ? input.description.trim() : null,
+      achievements,
+      fullDescription: input.fullDescription?.trim()
+        ? input.fullDescription.trim()
+        : null,
+      responsibilities,
+      skills,
+      careerProgression: careerProgressionResult.data,
+      previousRole: previousRoleResult.data,
+    },
+  }
+}
 
 async function ensureAdminSession(): Promise<ActionError | { email: string | null }> {
   const sessionResult = await getSafeAdminSession()
@@ -53,16 +113,13 @@ export async function createExperience(
     return { ok: false, message }
   }
 
-  const data = {
-    company: parsed.data.company.trim(),
-    role: parsed.data.role.trim(),
-    startDate: new Date(parsed.data.startDate),
-    endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
-    description: parsed.data.description?.trim() || null,
+  const prepared = buildExperienceData(parsed.data)
+  if (!prepared.ok) {
+    return prepared
   }
 
   try {
-    const experience = await prisma.experience.create({ data })
+    const experience = await prisma.experience.create({ data: prepared.data })
     await recordAudit({
       actorEmail: session.email,
       entityType: "Experience",
@@ -99,12 +156,9 @@ export async function updateExperience(
     return { ok: false, message }
   }
 
-  const data = {
-    company: parsed.data.company.trim(),
-    role: parsed.data.role.trim(),
-    startDate: new Date(parsed.data.startDate),
-    endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
-    description: parsed.data.description?.trim() || null,
+  const prepared = buildExperienceData(parsed.data)
+  if (!prepared.ok) {
+    return prepared
   }
 
   try {
@@ -113,7 +167,7 @@ export async function updateExperience(
       return { ok: false, message: "Experience not found" }
     }
 
-    const experience = await prisma.experience.update({ where: { id }, data })
+    const experience = await prisma.experience.update({ where: { id }, data: prepared.data })
     await recordAudit({
       actorEmail: session.email,
       entityType: "Experience",
@@ -179,10 +233,18 @@ export async function duplicateExperience(id: number): Promise<ActionResult<Retu
     const copy = await prisma.experience.create({
       data: {
         company: `${existing.company} (Copy)`.trim(),
-        role: existing.role,
+        title: existing.title,
+        period: existing.period,
+        location: existing.location,
         startDate: existing.startDate,
         endDate: existing.endDate,
         description: existing.description,
+        achievements: existing.achievements,
+        fullDescription: existing.fullDescription,
+        responsibilities: existing.responsibilities,
+        skills: existing.skills,
+        careerProgression: existing.careerProgression,
+        previousRole: existing.previousRole,
       },
     })
 
