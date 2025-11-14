@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache"
 
+import { Prisma } from "@prisma/client"
+
 import type { CareerProgression, PreviousRole } from "@/types/experience"
 
 import {
@@ -44,6 +46,38 @@ type ExperiencePayload = {
   skills: string[]
   careerProgression: CareerProgression[] | null
   previousRole: PreviousRole | null
+}
+
+function toNullableJsonValue(
+  value: unknown,
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
+  if (
+    value === Prisma.DbNull ||
+    value === Prisma.JsonNull ||
+    value === Prisma.AnyNull
+  ) {
+    return value
+  }
+
+  if (value === null) {
+    return Prisma.DbNull
+  }
+
+  if (typeof value === "undefined") {
+    return Prisma.DbNull
+  }
+
+  return value as Prisma.InputJsonValue
+}
+
+function mapExperiencePayloadToPersistence(payload: ExperiencePayload) {
+  const { careerProgression, previousRole, ...rest } = payload
+
+  return {
+    ...rest,
+    careerProgression: toNullableJsonValue(careerProgression),
+    previousRole: toNullableJsonValue(previousRole),
+  }
 }
 
 function buildExperienceData(input: ExperienceFormValues): ActionResult<ExperiencePayload> {
@@ -119,7 +153,9 @@ export async function createExperience(
   }
 
   try {
-    const experience = await prisma.experience.create({ data: prepared.data })
+    const experience = await prisma.experience.create({
+      data: mapExperiencePayloadToPersistence(prepared.data),
+    })
     await recordAudit({
       actorEmail: session.email,
       entityType: "Experience",
@@ -167,7 +203,10 @@ export async function updateExperience(
       return { ok: false, message: "Experience not found" }
     }
 
-    const experience = await prisma.experience.update({ where: { id }, data: prepared.data })
+    const experience = await prisma.experience.update({
+      where: { id },
+      data: mapExperiencePayloadToPersistence(prepared.data),
+    })
     await recordAudit({
       actorEmail: session.email,
       entityType: "Experience",
@@ -243,8 +282,8 @@ export async function duplicateExperience(id: number): Promise<ActionResult<Retu
         fullDescription: existing.fullDescription,
         responsibilities: existing.responsibilities,
         skills: existing.skills,
-        careerProgression: existing.careerProgression,
-        previousRole: existing.previousRole,
+        careerProgression: toNullableJsonValue(existing.careerProgression),
+        previousRole: toNullableJsonValue(existing.previousRole),
       },
     })
 
