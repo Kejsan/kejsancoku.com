@@ -1,8 +1,68 @@
 import { NextResponse } from "next/server"
 
+import { Prisma, type Experience } from "@prisma/client"
+
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import prisma from "@/lib/prisma"
 import { getSafeAdminSession } from "@/lib/safe-session"
+import {
+  normaliseCareerProgressionValue,
+  normalisePreviousRoleValue,
+} from "@/app/admin/(dashboard)/experiences/parsers"
+
+function toNullableJsonValue(
+  value: unknown,
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
+  if (
+    value === Prisma.DbNull ||
+    value === Prisma.JsonNull ||
+    value === Prisma.AnyNull
+  ) {
+    return value
+  }
+
+  if (value === null || typeof value === "undefined") {
+    return Prisma.DbNull
+  }
+
+  return value as Prisma.InputJsonValue
+}
+
+function ensureString(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined
+  }
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
+function ensureStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter((item): item is string => item.length > 0)
+}
+
+function toPublicExperience(experience: Experience) {
+  return {
+    id: String(experience.id),
+    title: experience.title,
+    company: experience.company,
+    period: experience.period ?? null,
+    location: experience.location ?? null,
+    description: experience.description ?? null,
+    achievements: experience.achievements ?? [],
+    fullDescription: experience.fullDescription ?? null,
+    responsibilities: experience.responsibilities ?? [],
+    skills: experience.skills ?? [],
+    careerProgression: normaliseCareerProgressionValue(experience.careerProgression),
+    previousRole: normalisePreviousRoleValue(experience.previousRole),
+    startDate: experience.startDate.toISOString(),
+    endDate: experience.endDate ? experience.endDate.toISOString() : null,
+  }
+}
 
 export async function GET() {
   if (!prisma) {
@@ -11,8 +71,10 @@ export async function GET() {
       { status: 503 }
     )
   }
-  const experiences = await prisma.experience.findMany()
-  return NextResponse.json(experiences)
+  const experiences = await prisma.experience.findMany({
+    orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
+  })
+  return NextResponse.json(experiences.map((experience) => toPublicExperience(experience)))
 }
 
 export async function POST(request: Request) {
@@ -26,7 +88,56 @@ export async function POST(request: Request) {
       { status: 503 }
     )
   }
-  const data = await request.json()
+  const body = await request.json()
+  const company = ensureString(body.company)
+  const title = ensureString(body.title)
+  const startDateInput = ensureString(body.startDate)
+
+  if (!company || !title || !startDateInput) {
+    return NextResponse.json(
+      { error: 'company, title, and startDate are required' },
+      { status: 400 },
+    )
+  }
+
+  const startDate = new Date(startDateInput)
+  if (Number.isNaN(startDate.valueOf())) {
+    return NextResponse.json(
+      { error: 'startDate must be a valid date' },
+      { status: 400 },
+    )
+  }
+
+  const endDateInput = ensureString(body.endDate)
+  const endDate = endDateInput ? new Date(endDateInput) : null
+  if (endDateInput && Number.isNaN(endDate?.valueOf() ?? Number.NaN)) {
+    return NextResponse.json(
+      { error: 'endDate must be a valid date' },
+      { status: 400 },
+    )
+  }
+
+  const careerProgression = normaliseCareerProgressionValue(
+    body.careerProgression,
+  )
+  const previousRole = normalisePreviousRoleValue(body.previousRole)
+
+  const data = {
+    company,
+    title,
+    period: ensureString(body.period) ?? null,
+    location: ensureString(body.location) ?? null,
+    startDate,
+    endDate,
+    description: ensureString(body.description) ?? null,
+    achievements: ensureStringArray(body.achievements),
+    fullDescription: ensureString(body.fullDescription) ?? null,
+    responsibilities: ensureStringArray(body.responsibilities),
+    skills: ensureStringArray(body.skills),
+    careerProgression: toNullableJsonValue(careerProgression),
+    previousRole: toNullableJsonValue(previousRole),
+  }
+
   try {
     const experience = await prisma.experience.create({ data })
     await recordAudit({
@@ -36,7 +147,7 @@ export async function POST(request: Request) {
       action: 'CREATE',
       diff: buildAuditDiff(null, experience),
     })
-    return NextResponse.json(experience)
+    return NextResponse.json(toPublicExperience(experience))
   } catch (error) {
     console.error('Failed to create experience', error)
     return new NextResponse('Internal Server Error', { status: 500 })

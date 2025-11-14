@@ -31,14 +31,22 @@ enum PostStatus {
 }
 
 model Experience {
-  id          Int      @id @default(autoincrement())
-  company     String
-  role        String
-  startDate   DateTime
-  endDate     DateTime?
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               Int       @id @default(autoincrement())
+  company          String
+  title            String
+  period           String?
+  location         String?
+  startDate        DateTime
+  endDate          DateTime?
+  description      String?
+  achievements     String[]  @default([])
+  fullDescription  String?
+  responsibilities String[]  @default([])
+  skills           String[]  @default([])
+  careerProgression Json?
+  previousRole     Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }
 
 model WorkSample {

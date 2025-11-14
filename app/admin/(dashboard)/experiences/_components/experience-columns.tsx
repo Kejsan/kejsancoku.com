@@ -63,7 +63,7 @@ export function createExperienceColumns({
       cell: ({ row }) => (
         <div className="flex flex-col gap-1">
           <span className="font-medium text-foreground">{row.original.company}</span>
-          <span className="text-xs text-muted-foreground">{row.original.role}</span>
+          <span className="text-xs text-muted-foreground">{row.original.title}</span>
         </div>
       ),
     },

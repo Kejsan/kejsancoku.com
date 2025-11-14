@@ -82,7 +82,7 @@ const ExperienceSection = forwardRef<HTMLDivElement>(function ExperienceSection(
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
                       <div>
                         <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-[#fb6163] transition-colors">
-                          {exp.title}
+                          {exp.title ?? exp.company}
                         </h3>
                         <p className="text-[#54a09b] text-lg">{exp.company}</p>
                         {exp.careerProgression && (
@@ -111,13 +111,13 @@ const ExperienceSection = forwardRef<HTMLDivElement>(function ExperienceSection(
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="text-white/80">{exp.period}</p>
-                        <p className="text-white/60">{exp.location}</p>
+                        {exp.period && <p className="text-white/80">{exp.period}</p>}
+                        {exp.location && <p className="text-white/60">{exp.location}</p>}
                       </div>
                     </div>
-                    <p className="text-white/80 mb-4">{exp.description}</p>
+                    {exp.description && <p className="text-white/80 mb-4">{exp.description}</p>}
                     <div className="space-y-2 mb-4">
-                      {exp.achievements.slice(0, 2).map((achievement, i) => (
+                      {(exp.achievements?.slice(0, 2) ?? []).map((achievement, i) => (
                         <div key={i} className="flex items-start gap-3">
                           <div className="w-2 h-2 bg-[#fb6163] rounded-full mt-2 flex-shrink-0"></div>
                           <p className="text-white/70">{achievement}</p>
@@ -127,7 +127,7 @@ const ExperienceSection = forwardRef<HTMLDivElement>(function ExperienceSection(
                     <div className="flex items-center justify-between">
                       <span className="text-[#fb6163] text-sm font-medium">Click to view full details →</span>
                       <div className="flex gap-2">
-                        {exp.skills.slice(0, 3).map((skill, i) => (
+                        {(exp.skills?.slice(0, 3) ?? []).map((skill, i) => (
                           <span key={i} className="text-xs bg-[#fb6163]/20 text-[#fb6163] px-2 py-1 rounded">
                             {skill}
                           </span>
@@ -161,10 +161,14 @@ const ExperienceSection = forwardRef<HTMLDivElement>(function ExperienceSection(
             <div className="p-8">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h2 className="text-3xl font-bold text-white mb-2">{selectedExperience.title}</h2>
+                  <h2 className="text-3xl font-bold text-white mb-2">
+                    {selectedExperience.title ?? selectedExperience.company}
+                  </h2>
                   <p className="text-[#54a09b] text-xl mb-1">{selectedExperience.company}</p>
                   <p className="text-white/80">
-                    {selectedExperience.period} • {selectedExperience.location}
+                    {[selectedExperience.period, selectedExperience.location]
+                      .filter((value): value is string => Boolean(value))
+                      .join(" • ")}
                   </p>
                   {selectedExperience.previousRole && (
                     <div className="mt-3 p-3 bg-[#fb6163]/10 border border-[#fb6163]/20 rounded-lg">
@@ -188,7 +192,9 @@ const ExperienceSection = forwardRef<HTMLDivElement>(function ExperienceSection(
 
               <div className="mb-6">
                 <h3 className="text-xl font-semibold text-white mb-3">Overview</h3>
-                <p className="text-white/80 leading-relaxed">{selectedExperience.fullDescription}</p>
+                <p className="text-white/80 leading-relaxed">
+                  {selectedExperience.fullDescription ?? selectedExperience.description ?? ""}
+                </p>
               </div>
 
               {selectedExperience.careerProgression ? (
@@ -227,9 +233,9 @@ const ExperienceSection = forwardRef<HTMLDivElement>(function ExperienceSection(
                             )}
                           </div>
                         </div>
-                        <p className="text-white/80 mb-3">{role.description}</p>
+                        {role.description && <p className="text-white/80 mb-3">{role.description}</p>}
                         <div className="space-y-2">
-                          {role.responsibilities.map((responsibility, j) => (
+                          {(role.responsibilities ?? []).map((responsibility, j) => (
                             <div key={j} className="flex items-start gap-2">
                               <div className="w-1.5 h-1.5 bg-white/40 rounded-full mt-2 flex-shrink-0"></div>
                               <p className="text-white/70 text-sm leading-relaxed">{responsibility}</p>
@@ -244,7 +250,7 @@ const ExperienceSection = forwardRef<HTMLDivElement>(function ExperienceSection(
                 <div className="mb-6">
                   <h3 className="text-xl font-semibold text-white mb-4">Key Responsibilities & Impact</h3>
                   <div className="space-y-3">
-                    {selectedExperience.responsibilities?.map((responsibility, i) => (
+                    {(selectedExperience.responsibilities ?? []).map((responsibility, i) => (
                       <div key={i} className="flex items-start gap-3">
                         <div className="w-2 h-2 bg-[#fb6163] rounded-full mt-2 flex-shrink-0"></div>
                         <p className="text-white/70 leading-relaxed">{responsibility}</p>
@@ -257,7 +263,7 @@ const ExperienceSection = forwardRef<HTMLDivElement>(function ExperienceSection(
               <div>
                 <h3 className="text-xl font-semibold text-white mb-4">Skills & Technologies</h3>
                 <div className="flex flex-wrap gap-2">
-                  {selectedExperience.skills.map((skill, i) => (
+                  {(selectedExperience.skills ?? []).map((skill, i) => (
                     <span
                       key={i}
                       className="bg-gradient-to-r from-[#54a09b]/20 to-[#fb6163]/20 border border-[#54a09b]/30 text-white px-3 py-1 rounded-full text-sm"

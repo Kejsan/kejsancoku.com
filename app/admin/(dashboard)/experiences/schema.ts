@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { parseCareerProgressionJson, parsePreviousRoleJson } from "./parsers"
+
 const dateStringSchema = z
   .string({ required_error: "Start date is required" })
   .min(1, "Start date is required")
@@ -17,10 +19,34 @@ const optionalDateStringSchema = z
 
 export const experienceFormSchema = z.object({
   company: z.string({ required_error: "Company is required" }).min(1, "Company is required"),
-  role: z.string({ required_error: "Role is required" }).min(1, "Role is required"),
+  title: z.string({ required_error: "Title is required" }).min(1, "Title is required"),
+  period: z.string().optional(),
+  location: z.string().optional(),
   startDate: dateStringSchema,
   endDate: optionalDateStringSchema,
   description: z.string().optional(),
+  achievements: z.string().optional(),
+  fullDescription: z.string().optional(),
+  responsibilities: z.string().optional(),
+  skills: z.string().optional(),
+  careerProgression: z
+    .string()
+    .optional()
+    .superRefine((value, ctx) => {
+      const result = parseCareerProgressionJson(value)
+      if (!result.ok) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: result.message })
+      }
+    }),
+  previousRole: z
+    .string()
+    .optional()
+    .superRefine((value, ctx) => {
+      const result = parsePreviousRoleJson(value)
+      if (!result.ok) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: result.message })
+      }
+    }),
 })
 
 export type ExperienceFormValues = z.infer<typeof experienceFormSchema>

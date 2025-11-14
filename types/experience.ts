@@ -17,13 +17,13 @@ export interface Experience {
   id: string;
   title: string;
   company: string;
-  period: string;
-  location: string;
-  description: string;
-  achievements: string[];
-  fullDescription: string;
+  period?: string | null;
+  location?: string | null;
+  description?: string | null;
+  achievements?: string[];
+  fullDescription?: string | null;
   responsibilities?: string[];
-  skills: string[];
-  careerProgression?: CareerProgression[];
-  previousRole?: PreviousRole;
+  skills?: string[];
+  careerProgression?: CareerProgression[] | null;
+  previousRole?: PreviousRole | null;
 }
