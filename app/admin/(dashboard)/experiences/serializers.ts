@@ -1,6 +1,7 @@
 import type { Experience } from "@prisma/client"
 
 import {
+  coerceStringArray,
   normaliseCareerProgressionValue,
   normalisePreviousRoleValue,
 } from "./parsers"
@@ -12,10 +13,10 @@ export function serializeExperience(experience: Experience) {
     ...experience,
     period: experience.period ?? null,
     location: experience.location ?? null,
-    achievements: experience.achievements ?? [],
+    achievements: coerceStringArray(experience.achievements),
     fullDescription: experience.fullDescription ?? null,
-    responsibilities: experience.responsibilities ?? [],
-    skills: experience.skills ?? [],
+    responsibilities: coerceStringArray(experience.responsibilities),
+    skills: coerceStringArray(experience.skills),
     careerProgression: normaliseCareerProgressionValue(experience.careerProgression),
     previousRole: normalisePreviousRoleValue(experience.previousRole),
     startDate: experience.startDate.toISOString(),

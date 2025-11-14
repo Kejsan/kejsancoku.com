@@ -80,10 +80,29 @@ function mapExperiencePayloadToPersistence(payload: ExperiencePayload) {
   }
 }
 
+function sanitizeStringArray(values: readonly string[] | undefined): string[] {
+  if (!values) {
+    return []
+  }
+
+  const result: string[] = []
+  const seen = new Set<string>()
+  for (const value of values) {
+    const trimmed = value.trim()
+    if (!trimmed || seen.has(trimmed)) {
+      continue
+    }
+    seen.add(trimmed)
+    result.push(trimmed)
+  }
+
+  return result
+}
+
 function buildExperienceData(input: ExperienceFormValues): ActionResult<ExperiencePayload> {
-  const achievements = splitMultiline(input.achievements)
+  const achievements = sanitizeStringArray(input.achievements)
   const responsibilities = splitMultiline(input.responsibilities)
-  const skills = splitMultiline(input.skills)
+  const skills = sanitizeStringArray(input.skills)
 
   const careerProgressionResult = parseCareerProgressionJson(input.careerProgression)
   if (!careerProgressionResult.ok) {

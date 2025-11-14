@@ -44,12 +44,28 @@ const EMPTY_FORM: ExperienceFormValues = {
   startDate: "",
   endDate: "",
   description: "",
-  achievements: "",
+  achievements: [],
   fullDescription: "",
   responsibilities: "",
-  skills: "",
+  skills: [],
   careerProgression: "",
   previousRole: "",
+}
+
+function sanitizeStringList(values: readonly string[]): string[] {
+  const result: string[] = []
+  const seen = new Set<string>()
+
+  for (const value of values) {
+    const trimmed = value.trim()
+    if (!trimmed || seen.has(trimmed)) {
+      continue
+    }
+    seen.add(trimmed)
+    result.push(trimmed)
+  }
+
+  return result
 }
 
 type DrawerState = {
@@ -109,9 +125,9 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
         return
       }
 
-      const achievements = splitMultiline(parsed.data.achievements)
+      const achievements = sanitizeStringList(parsed.data.achievements)
       const responsibilities = splitMultiline(parsed.data.responsibilities)
-      const skills = splitMultiline(parsed.data.skills)
+      const skills = sanitizeStringList(parsed.data.skills)
       const careerProgression = parseCareerProgressionJson(parsed.data.careerProgression)
       if (!careerProgression.ok) {
         toast.error(careerProgression.message)
@@ -187,9 +203,9 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
         return
       }
 
-      const achievements = splitMultiline(parsed.data.achievements)
+      const achievements = sanitizeStringList(parsed.data.achievements)
       const responsibilities = splitMultiline(parsed.data.responsibilities)
-      const skills = splitMultiline(parsed.data.skills)
+      const skills = sanitizeStringList(parsed.data.skills)
       const careerProgression = parseCareerProgressionJson(parsed.data.careerProgression)
       if (!careerProgression.ok) {
         toast.error(careerProgression.message)
@@ -349,8 +365,13 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
   )
 
   const drawerDefaultValues = React.useMemo((): ExperienceFormValues => {
-    if (!drawerState) return EMPTY_FORM
-    if (drawerState.mode === "create") return EMPTY_FORM
+    if (!drawerState || drawerState.mode === "create") {
+      return {
+        ...EMPTY_FORM,
+        achievements: [],
+        skills: [],
+      }
+    }
     const experience = drawerState.experience!
     return {
       company: experience.company ?? "",
@@ -361,9 +382,11 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
       endDate: toDateInputValue(experience.endDate),
       description: experience.description ?? "",
       fullDescription: experience.fullDescription ?? "",
-      achievements: formatMultilineForForm(experience.achievements),
+      achievements: experience.achievements
+        ? sanitizeStringList(experience.achievements)
+        : [],
       responsibilities: formatMultilineForForm(experience.responsibilities),
-      skills: formatMultilineForForm(experience.skills),
+      skills: experience.skills ? sanitizeStringList(experience.skills) : [],
       careerProgression: formatCareerProgressionForForm(experience.careerProgression),
       previousRole: formatPreviousRoleForForm(experience.previousRole),
     }

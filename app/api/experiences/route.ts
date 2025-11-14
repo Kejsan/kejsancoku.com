@@ -6,6 +6,7 @@ import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import prisma from "@/lib/prisma"
 import { getSafeAdminSession } from "@/lib/safe-session"
 import {
+  coerceStringArray,
   normaliseCareerProgressionValue,
   normalisePreviousRoleValue,
 } from "@/app/admin/(dashboard)/experiences/parsers"
@@ -36,15 +37,6 @@ function ensureString(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined
 }
 
-function ensureStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return []
-  }
-  return value
-    .map((item) => (typeof item === "string" ? item.trim() : ""))
-    .filter((item): item is string => item.length > 0)
-}
-
 function toPublicExperience(experience: Experience) {
   return {
     id: String(experience.id),
@@ -53,10 +45,10 @@ function toPublicExperience(experience: Experience) {
     period: experience.period ?? null,
     location: experience.location ?? null,
     description: experience.description ?? null,
-    achievements: experience.achievements ?? [],
+    achievements: coerceStringArray(experience.achievements),
     fullDescription: experience.fullDescription ?? null,
-    responsibilities: experience.responsibilities ?? [],
-    skills: experience.skills ?? [],
+    responsibilities: coerceStringArray(experience.responsibilities),
+    skills: coerceStringArray(experience.skills),
     careerProgression: normaliseCareerProgressionValue(experience.careerProgression),
     previousRole: normalisePreviousRoleValue(experience.previousRole),
     startDate: experience.startDate.toISOString(),
@@ -130,10 +122,10 @@ export async function POST(request: Request) {
     startDate,
     endDate,
     description: ensureString(body.description) ?? null,
-    achievements: ensureStringArray(body.achievements),
+    achievements: coerceStringArray(body.achievements),
     fullDescription: ensureString(body.fullDescription) ?? null,
-    responsibilities: ensureStringArray(body.responsibilities),
-    skills: ensureStringArray(body.skills),
+    responsibilities: coerceStringArray(body.responsibilities),
+    skills: coerceStringArray(body.skills),
     careerProgression: toNullableJsonValue(careerProgression),
     previousRole: toNullableJsonValue(previousRole),
   }
