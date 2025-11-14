@@ -59,8 +59,8 @@ export default function StaticFooter() {
               {SOCIAL_LINKS.map(({ label, href, icon: Icon }) => (
                 <a
                   key={label}
-                  href={href}
-                  target={href.startsWith("mailto:") ? "_self" : "_blank"}
+                  href={href ?? undefined}
+                  target={href?.startsWith("mailto:") ? "_self" : "_blank"}
                   rel="noreferrer noopener"
                   className="text-slate-400 transition-colors hover:text-white"
                   aria-label={label}
