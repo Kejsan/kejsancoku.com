@@ -10,13 +10,68 @@ function normaliseString(value: unknown): string | undefined {
   return typeof value === "string" ? value.trim() : undefined
 }
 
-function normaliseStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return []
+function cleanStringList(values: Iterable<string>): string[] {
+  const result: string[] = []
+  const seen = new Set<string>()
+  for (const value of values) {
+    const trimmed = value.trim()
+    if (!trimmed || seen.has(trimmed)) {
+      continue
+    }
+    seen.add(trimmed)
+    result.push(trimmed)
   }
-  return value
-    .map((item) => (typeof item === "string" ? item.trim() : ""))
-    .filter((item): item is string => item.length > 0)
+  return result
+}
+
+export function coerceStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return cleanStringList(
+      value.filter((item): item is string => typeof item === "string"),
+    )
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    if (!trimmed) {
+      return []
+    }
+
+    if (/^\s*\[/.test(trimmed)) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (Array.isArray(parsed)) {
+          return cleanStringList(
+            parsed.filter((item): item is string => typeof item === "string"),
+          )
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("Failed to parse string array JSON", error)
+        }
+      }
+    }
+
+    const parts = trimmed
+      .split(/\r?\n|,|;|\u2022|\u2023|\u25E6|\u2043|\u2219/)
+      .map((part) => part.replace(/^[-*•◦‣∙]+\s*/, ""))
+
+    return cleanStringList(parts)
+  }
+
+  if (
+    value &&
+    typeof value === "object" &&
+    "toString" in value &&
+    typeof (value as { toString: () => unknown }).toString === "function"
+  ) {
+    const stringified = (value as { toString: () => unknown }).toString()
+    if (typeof stringified === "string" && stringified.trim().length > 0) {
+      return coerceStringArray(stringified)
+    }
+  }
+
+  return []
 }
 
 export function splitMultiline(value: string | null | undefined): string[] {
@@ -52,8 +107,8 @@ export function parseCareerProgressionJson(
       const period = normaliseString(entry.period)
       const type = normaliseString(entry.type) ?? "standard"
       const description = normaliseString(entry.description) ?? ""
-      const responsibilities = normaliseStringArray(entry.responsibilities)
-      const skills = normaliseStringArray(entry.skills)
+      const responsibilities = coerceStringArray(entry.responsibilities)
+      const skills = coerceStringArray(entry.skills)
 
       if (!title || !period) {
         return {
@@ -154,8 +209,8 @@ export function normaliseCareerProgressionValue(
     const period = normaliseString(entry.period)
     const type = normaliseString(entry.type) ?? "standard"
     const description = normaliseString(entry.description) ?? ""
-    const responsibilities = normaliseStringArray(entry.responsibilities)
-    const skills = normaliseStringArray(entry.skills)
+    const responsibilities = coerceStringArray(entry.responsibilities)
+    const skills = coerceStringArray(entry.skills)
 
     if (!title || !period) {
       continue

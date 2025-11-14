@@ -17,6 +17,8 @@ const optionalDateStringSchema = z
     return !Number.isNaN(Date.parse(value))
   }, "Enter a valid date")
 
+const stringListField = z.array(z.string().trim().min(1)).default([])
+
 export const experienceFormSchema = z.object({
   company: z.string({ required_error: "Company is required" }).min(1, "Company is required"),
   title: z.string({ required_error: "Title is required" }).min(1, "Title is required"),
@@ -25,10 +27,10 @@ export const experienceFormSchema = z.object({
   startDate: dateStringSchema,
   endDate: optionalDateStringSchema,
   description: z.string().optional(),
-  achievements: z.string().optional(),
+  achievements: stringListField,
   fullDescription: z.string().optional(),
   responsibilities: z.string().optional(),
-  skills: z.string().optional(),
+  skills: stringListField,
   careerProgression: z
     .string()
     .optional()

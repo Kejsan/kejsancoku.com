@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { MultiValueInput } from "@/components/ui/multi-value-input"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Sheet,
@@ -213,13 +214,19 @@ export function ExperienceFormDrawer({
                 <FormItem>
                   <FormLabel>Key achievements</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder={"One achievement per line"}
-                      className="min-h-[120px]"
-                      {...field}
+                    <MultiValueInput
+                      name={field.name}
+                      value={field.value ?? []}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder="Press enter after each achievement"
+                      disabled={isPending}
+                      ref={field.ref}
                     />
                   </FormControl>
-                  <FormDescription>Displayed prominently in the experience cards.</FormDescription>
+                  <FormDescription>
+                    Press Enter after each achievement. Displayed prominently in the experience cards.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -249,12 +256,17 @@ export function ExperienceFormDrawer({
                 <FormItem>
                   <FormLabel>Skills &amp; technologies</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder={"One skill per line"}
-                      className="min-h-[120px]"
-                      {...field}
+                    <MultiValueInput
+                      name={field.name}
+                      value={field.value ?? []}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder="Add a skill and press enter"
+                      disabled={isPending}
+                      ref={field.ref}
                     />
                   </FormControl>
+                  <FormDescription>Press Enter after each skill or paste a list to add multiple at once.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
