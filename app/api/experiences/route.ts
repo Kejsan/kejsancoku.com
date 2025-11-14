@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import type { Experience } from "@prisma/client"
+import { Prisma, type Experience } from "@prisma/client"
 
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import prisma from "@/lib/prisma"
@@ -9,6 +9,24 @@ import {
   normaliseCareerProgressionValue,
   normalisePreviousRoleValue,
 } from "@/app/admin/(dashboard)/experiences/parsers"
+
+function toNullableJsonValue(
+  value: unknown,
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
+  if (
+    value === Prisma.DbNull ||
+    value === Prisma.JsonNull ||
+    value === Prisma.AnyNull
+  ) {
+    return value
+  }
+
+  if (value === null || typeof value === "undefined") {
+    return Prisma.DbNull
+  }
+
+  return value as Prisma.InputJsonValue
+}
 
 function ensureString(value: unknown): string | undefined {
   if (typeof value !== "string") {
@@ -99,6 +117,11 @@ export async function POST(request: Request) {
     )
   }
 
+  const careerProgression = normaliseCareerProgressionValue(
+    body.careerProgression,
+  )
+  const previousRole = normalisePreviousRoleValue(body.previousRole)
+
   const data = {
     company,
     title,
@@ -111,8 +134,8 @@ export async function POST(request: Request) {
     fullDescription: ensureString(body.fullDescription) ?? null,
     responsibilities: ensureStringArray(body.responsibilities),
     skills: ensureStringArray(body.skills),
-    careerProgression: normaliseCareerProgressionValue(body.careerProgression),
-    previousRole: normalisePreviousRoleValue(body.previousRole),
+    careerProgression: toNullableJsonValue(careerProgression),
+    previousRole: toNullableJsonValue(previousRole),
   }
 
   try {
