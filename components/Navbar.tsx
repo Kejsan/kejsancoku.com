@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { type LucideIcon, Home, PenSquare, Briefcase, AppWindow } from "lucide-react"
+import { type LucideIcon, AppWindow, Briefcase, Home, PenSquare, Wrench } from "lucide-react"
 
 interface NavItem {
   name: string
@@ -12,6 +12,7 @@ const NAV_ITEMS: NavItem[] = [
   { name: "Blog", href: "/blog", icon: PenSquare },
   { name: "Work Samples", href: "/work-samples", icon: Briefcase },
   { name: "Apps", href: "/apps", icon: AppWindow },
+  { name: "Tools", href: "/tools", icon: Wrench },
 ]
 
 export default function Navbar() {

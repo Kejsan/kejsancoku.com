@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react"
 import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { EditDialog } from "@/components/admin/edit-dialog"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+
+import { EditDialog } from "@/components/admin/edit-dialog"
+import { ToolCard, ToolCardSkeleton } from "@/components/tools/tool-card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 interface Tool {
   id: number
@@ -132,45 +134,55 @@ export default function ToolsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Manage Tools</h1>
+    <div className="space-y-6 p-4 md:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Manage Tools</h1>
+          <p className="text-sm text-muted-foreground">
+            Keep your public tools page in sync with the stack you rely on.
+          </p>
+        </div>
         <Button onClick={handleAdd}>Add Tool</Button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-        {error && tools.length > 0 && !isLoading && (
-          <div className="p-4 text-sm text-red-500 border-b border-gray-200 dark:border-gray-700">
-            {error}. Showing the most recent data.
-          </div>
-        )}
-        {isLoading ? (
-          <div className="p-4 text-sm text-gray-500">Loading tools...</div>
-        ) : tools.length === 0 ? (
-          <div className="p-4 text-sm text-gray-500">
+      {error && tools.length > 0 && !isLoading ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}. Showing the most recent data.
+        </div>
+      ) : null}
+
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <ToolCardSkeleton
+              key={index}
+              className="border-border bg-muted/60 text-card-foreground"
+            />
+          ))}
+        </div>
+      ) : tools.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-muted-foreground/40 bg-muted/40 px-6 py-16 text-center text-muted-foreground">
+          <p className="text-base font-medium">
             {error
               ? "Unable to load tools. Please try again later."
-              : "No tools available."}
-          </div>
-        ) : (
-          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-            {tools.map((tool) => (
-              <li key={tool.id} className="p-4 flex justify-between items-center">
-                <div>
-                  <p className="font-semibold">{tool.name}</p>
-                  <a
-                    href={tool.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-500 hover:underline"
-                  >
-                    {tool.url}
-                  </a>
-                  {tool.description && (
-                    <p className="text-sm text-gray-500 mt-1">{tool.description}</p>
-                  )}
-                </div>
-                <div className="flex space-x-2">
+              : "No tools documented yet."}
+          </p>
+          <p className="max-w-lg text-sm text-muted-foreground/80">
+            Add the platforms and software you rely on to help visitors understand your workflow.
+          </p>
+          <Button size="sm" onClick={handleAdd}>
+            Add your first tool
+          </Button>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {tools.map((tool) => (
+            <ToolCard
+              key={tool.id}
+              tool={tool}
+              className="border-border bg-card text-card-foreground hover:border-primary/40"
+              actions={
+                <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => handleEdit(tool)}>
                     Edit
                   </Button>
@@ -182,11 +194,11 @@ export default function ToolsPage() {
                     Delete
                   </Button>
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+              }
+            />
+          ))}
+        </div>
+      )}
 
       <EditDialog<ToolFormValues>
         title={editingTool ? "Edit Tool" : "Add New Tool"}
