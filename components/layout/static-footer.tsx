@@ -1,5 +1,4 @@
 import Link from "next/link"
-import type { LucideIcon } from "lucide-react"
 import { Github, Linkedin, Mail, Twitter } from "lucide-react"
 
 import { NAV_LINKS } from "@/lib/navigation-links"
@@ -30,10 +29,7 @@ const SOCIAL_LINKS = (
       icon: Mail,
     },
   ] as const
-).filter(
-  (link): link is { label: string; href: string; icon: LucideIcon } =>
-    Boolean(link.href),
-)
+).filter((link) => Boolean(link.href))
 
 const QUICK_LINKS = NAV_LINKS.map(({ name, href }) => ({ name, href }))
 
