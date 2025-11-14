@@ -17,19 +17,19 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function Navbar() {
   return (
-    <nav className="fixed top-0 w-full z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
-      <div className="container flex items-center justify-between h-14">
-        <Link href="/" className="font-bold">
+    <nav className="fixed top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur">
+      <div className="container flex h-16 items-center justify-between px-4 sm:px-6">
+        <Link href="/" className="text-lg font-semibold tracking-tight">
           Kejsan
         </Link>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-4">
           {NAV_ITEMS.map(({ name, href, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              className="flex items-center gap-1 text-sm text-white hover:text-muted-foreground"
+              className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="h-4 w-4" />
               {name}
             </Link>
           ))}
