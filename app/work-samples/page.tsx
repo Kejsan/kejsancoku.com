@@ -1,22 +1,16 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import {
-  ArrowLeft,
-  ExternalLink,
-  ChevronUp,
-  TrendingUp,
-  Users,
-  FileText,
-  Globe,
-  Loader2,
-} from "lucide-react"
+import { ExternalLink, ChevronUp, TrendingUp, Users, FileText, Globe, Loader2 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
 import type { SiteSettings } from "@prisma/client"
 import type { SiteSettingsResponse } from "@/types/site-settings"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import PageLayout from "@/components/layout/page-layout"
+import PageHero from "@/components/sections/page-hero"
+import PageCta from "@/components/sections/page-cta"
 
 type WorkSampleStat = {
   label: string
@@ -157,7 +151,7 @@ export default function WorkSamples() {
       globe: Globe,
       world: Globe,
     }),
-    []
+    [],
   )
 
   const scrollButtonLabel = settings?.email
@@ -165,262 +159,221 @@ export default function WorkSamples() {
     : "Scroll to top"
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-[#000080] to-slate-900">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <Link href="/" className="text-white font-bold text-xl">
-              {settings?.brandName || "Kejsan"}
-            </Link>
-            <Link href="/" className="text-white/80 hover:text-white transition-colors flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      <div className="pt-20">
-        {/* Header */}
-        <section className="py-20 px-4">
-          <div className="max-w-6xl mx-auto text-center work-header">
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">Work Samples</h1>
-            <p className="text-xl text-white/80 mb-8 max-w-3xl mx-auto">
-              A showcase of my digital marketing work across various companies and platforms. From social media growth to content creation, here&apos;s a comprehensive look at my professional contributions.
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#fb6163]">19k</div>
-                <div className="text-white/60 text-sm">LinkedIn Growth</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#fb6163]">50+</div>
-                <div className="text-white/60 text-sm">Articles Written</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#fb6163]">6</div>
-                <div className="text-white/60 text-sm">Platforms Managed</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#fb6163]">4</div>
-                <div className="text-white/60 text-sm">Companies</div>
-              </div>
+    <PageLayout>
+      <PageHero
+        className="work-header"
+        title="Work Samples"
+        description="A showcase of my digital marketing work across various companies and platforms. From social media growth to content creation, here&apos;s a comprehensive look at my professional contributions."
+      >
+        <div className="grid w-full grid-cols-2 gap-6 text-center md:grid-cols-4">
+          {[
+            { label: "LinkedIn Growth", value: "19k" },
+            { label: "Articles Written", value: "50+" },
+            { label: "Platforms Managed", value: "6" },
+            { label: "Companies", value: "4" },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-2xl border border-border bg-muted/40 p-4 shadow-sm">
+              <div className="text-2xl font-semibold text-primary">{stat.value}</div>
+              <div className="text-sm text-muted-foreground">{stat.label}</div>
             </div>
-          </div>
-        </section>
+          ))}
+        </div>
+      </PageHero>
 
-        {/* Work Samples */}
-        <section className="px-4 pb-20">
-          <div className="max-w-6xl mx-auto space-y-16">
-            {isLoadingSamples ? (
-              <div className="flex justify-center py-20">
-                <Loader2 className="h-10 w-10 animate-spin text-[#fb6163]" />
-              </div>
-            ) : samplesError ? (
-              <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-6 text-center text-red-100">
-                {samplesError}
-              </div>
-            ) : workSamples.length === 0 ? (
-              <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center text-white/70">
-                No work samples available at the moment. Please check back later.
-              </div>
-            ) : (
-              workSamples.map((sample) => {
-                const iconKey = typeof sample.icon === "string" ? sample.icon.toLowerCase() : undefined
-                const IconComponent = iconKey ? iconMap[iconKey] ?? null : null
-                const hasDetailedLinks = Boolean(
-                  sample.mainContent?.url ||
-                    sample.socialChannels?.some((channel) => Boolean(channel.url)) ||
-                    sample.writingSamples?.some((article) => Boolean(article.url))
-                )
+      <section className="px-4 pb-20">
+        <div className="mx-auto max-w-6xl space-y-16">
+          {isLoadingSamples ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            </div>
+          ) : samplesError ? (
+            <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive-foreground">
+              {samplesError}
+            </div>
+          ) : workSamples.length === 0 ? (
+            <div className="rounded-2xl border border-border bg-muted/40 p-6 text-center text-muted-foreground">
+              No work samples available at the moment. Please check back later.
+            </div>
+          ) : (
+            workSamples.map((sample) => {
+              const iconKey = typeof sample.icon === "string" ? sample.icon.toLowerCase() : undefined
+              const IconComponent = iconKey ? iconMap[iconKey] ?? null : null
+              const hasDetailedLinks = Boolean(
+                sample.mainContent?.url ||
+                  sample.socialChannels?.some((channel) => Boolean(channel.url)) ||
+                  sample.writingSamples?.some((article) => Boolean(article.url)),
+              )
 
-                return (
-                  <Card
-                    key={sample.id}
-                    className="work-category bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300"
-                  >
-                    <CardContent className="p-8">
-                      {/* Header */}
-                      <div className="flex items-start gap-6 mb-8">
-                        <div className="p-4 bg-gradient-to-r from-[#54a09b]/20 to-[#fb6163]/20 rounded-xl border border-[#fb6163]/30">
-                          {IconComponent ? (
-                            <IconComponent className="h-8 w-8 text-[#fb6163]" />
-                          ) : (
-                            <Globe className="h-8 w-8 text-[#fb6163]" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h2 className="text-3xl font-bold text-white mb-3">{sample.title}</h2>
-                          {sample.description && (
-                            <p className="text-white/80 text-lg mb-4">{sample.description}</p>
-                          )}
-                          {!!sample.stats?.length && (
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                              {sample.stats?.map((stat, i) => (
-                                <div key={i} className="bg-white/5 rounded-lg p-3 border border-white/10">
-                                  <div className="text-[#fb6163] font-semibold text-sm">{stat.label}</div>
-                                  <div className="text-white font-medium">{stat.value}</div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+              return (
+                <Card
+                  key={sample.id}
+                  className="work-category border border-border/70 bg-card/90 shadow-sm transition-colors hover:border-primary/50"
+                >
+                  <CardContent className="space-y-8 p-8">
+                    <div className="flex flex-col gap-6 md:flex-row md:items-start">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-border/60 bg-muted/40">
+                        {IconComponent ? <IconComponent className="h-8 w-8 text-primary" /> : <Globe className="h-8 w-8 text-primary" />}
                       </div>
-
-                      {/* Main Content Link */}
-                      {sample.mainContent?.url && (
-                        <div className="mb-8">
-                          <h3 className="text-xl font-semibold text-white mb-4">Main Content Platform</h3>
-                          <a
-                            href={sample.mainContent.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#54a09b] to-[#fb6163] text-white px-6 py-3 rounded-lg hover:from-[#54a09b]/90 hover:to-[#fb6163]/90 transition-all duration-300"
-                          >
-                            <Globe className="w-5 h-5" />
-                            {sample.mainContent.title ?? sample.mainContent.url}
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
+                      <div className="flex-1 space-y-4">
+                        <div className="space-y-2">
+                          <h2 className="text-3xl font-semibold text-foreground">{sample.title}</h2>
+                          {sample.description ? (
+                            <p className="text-lg text-muted-foreground">{sample.description}</p>
+                          ) : null}
                         </div>
-                      )}
+                        {!!sample.stats?.length && (
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            {sample.stats?.map((stat, i) => (
+                              <div key={i} className="rounded-xl border border-border/60 bg-muted/40 p-4 text-left">
+                                <div className="text-sm font-medium text-muted-foreground">{stat.label}</div>
+                                <div className="text-lg font-semibold text-foreground">{stat.value}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                      {/* Default External Link */}
-                      {!hasDetailedLinks && sample.url && (
-                        <div className="mb-8">
-                          <a
-                            href={sample.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#54a09b] to-[#fb6163] text-white px-6 py-3 rounded-lg hover:from-[#54a09b]/90 hover:to-[#fb6163]/90 transition-all duration-300"
-                          >
-                            <Globe className="w-5 h-5" />
-                            Visit Project
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        </div>
-                      )}
+                    {sample.mainContent?.url ? (
+                      <div className="space-y-4">
+                        <h3 className="text-xl font-semibold text-foreground">Main Content Platform</h3>
+                        <a
+                          href={sample.mainContent.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:border-primary/50 hover:bg-primary/90"
+                        >
+                          <Globe className="h-5 w-5" />
+                          {sample.mainContent.title ?? sample.mainContent.url}
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
+                    ) : null}
 
-                      {/* Social Channels */}
-                      {!!sample.socialChannels?.length && (
-                        <div className="mb-8">
-                          <h3 className="text-xl font-semibold text-white mb-4">
-                            {sample.socialHeading ?? "Managed Social Media Channels"}
-                          </h3>
-                          <div className="grid md:grid-cols-2 gap-4">
-                            {sample.socialChannels?.map((channel, i) => (
-                              <div key={i} className="bg-white/5 rounded-lg p-4 border border-white/10">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-semibold text-white">{channel.platform ?? channel.title}</h4>
-                                  <a
-                                    href={channel.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[#fb6163] hover:text-[#fb6163]/80 transition-colors"
-                                  >
-                                    <ExternalLink className="w-4 h-4" />
-                                  </a>
-                                </div>
-                                {channel.description && (
-                                  <p className="text-white/70 text-sm mb-3">{channel.description}</p>
-                                )}
+                    {!hasDetailedLinks && sample.url ? (
+                      <div>
+                        <a
+                          href={sample.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:border-primary/50 hover:bg-primary/90"
+                        >
+                          <Globe className="h-5 w-5" />
+                          Visit Project
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
+                    ) : null}
+
+                    {!!sample.socialChannels?.length ? (
+                      <div className="space-y-4">
+                        <h3 className="text-xl font-semibold text-foreground">
+                          {sample.socialHeading ?? "Managed Social Media Channels"}
+                        </h3>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          {sample.socialChannels?.map((channel, i) => (
+                            <div key={i} className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                              <div className="mb-2 flex items-center justify-between">
+                                <h4 className="text-sm font-semibold text-foreground">
+                                  {channel.platform ?? channel.title}
+                                </h4>
                                 <a
                                   href={channel.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-[#54a09b] hover:text-[#54a09b]/80 text-sm break-all transition-colors"
+                                  className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
                                 >
-                                  {channel.url}
+                                  <ExternalLink className="h-4 w-4" />
                                 </a>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Writing Samples */}
-                      {!!sample.writingSamples?.length && (
-                        <div className="mb-6">
-                          <h3 className="text-xl font-semibold text-white mb-4">Published Writing Samples</h3>
-                          <div className="grid gap-3">
-                            {sample.writingSamples?.map((article, i) => (
+                              {channel.description ? (
+                                <p className="mb-3 text-sm text-muted-foreground">{channel.description}</p>
+                              ) : null}
                               <a
-                                key={i}
-                                href={article.url}
+                                href={channel.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 group"
+                                className="break-all text-sm font-medium text-primary transition-colors hover:text-primary/80"
                               >
-                                <span className="text-white group-hover:text-[#fb6163] transition-colors">
-                                  {article.title ?? article.url}
-                                </span>
-                                <ExternalLink className="w-4 h-4 text-white/60 group-hover:text-[#fb6163] transition-colors" />
+                                {channel.url}
                               </a>
-                            ))}
-                          </div>
-                          {sample.writingSamplesNote && (
-                            <p className="text-white/60 text-sm mt-4 italic">{sample.writingSamplesNote}</p>
-                          )}
+                            </div>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    ) : null}
 
-                      {/* Additional Note */}
-                      {sample.additionalNote && (
-                        <div className="mt-6 p-4 bg-[#fb6163]/10 border border-[#fb6163]/20 rounded-lg">
-                          <p className="text-white/80 italic">{sample.additionalNote}</p>
+                    {!!sample.writingSamples?.length ? (
+                      <div className="space-y-4">
+                        <h3 className="text-xl font-semibold text-foreground">Published Writing Samples</h3>
+                        <div className="grid gap-3">
+                          {sample.writingSamples?.map((article, i) => (
+                            <a
+                              key={i}
+                              href={article.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 p-4 transition-colors hover:border-primary/40 hover:bg-muted/50"
+                            >
+                              <span className="text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                                {article.title ?? article.url}
+                              </span>
+                              <ExternalLink className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
+                            </a>
+                          ))}
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )
-              })
+                        {sample.writingSamplesNote ? (
+                          <p className="text-sm text-muted-foreground">{sample.writingSamplesNote}</p>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {sample.additionalNote ? (
+                      <div className="rounded-xl border border-primary/40 bg-primary/10 p-4">
+                        <p className="text-sm text-muted-foreground">{sample.additionalNote}</p>
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              )
+            })
+          )}
+        </div>
+      </section>
+
+      <PageCta
+        title="Interested in Working Together?"
+        description="These samples represent just a portion of my work. I&apos;d love to discuss how I can help grow your digital presence."
+        actions={
+          <>
+            {emailHref ? (
+              <a href={emailHref}>
+                <Button size="lg">Get In Touch</Button>
+              </a>
+            ) : (
+              <Button size="lg" disabled>
+                Email Unavailable
+              </Button>
             )}
-          </div>
-        </section>
-        {/* Call to Action */}
-        <section className="px-4 py-16 bg-gradient-to-r from-[#000080]/20 to-[#fb6163]/20">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-white mb-6">Interested in Working Together?</h2>
-            <p className="text-white/80 text-lg mb-8">
-              These samples represent just a portion of my work. I&apos;d love to discuss how I can help grow your digital presence.
-            </p>
-            <div className="flex justify-center gap-6">
-              {emailHref ? (
-                <a href={emailHref}>
-                  <Button size="lg" className="bg-[#fb6163] hover:bg-[#fb6163]/90 text-white">
-                    Get In Touch
-                  </Button>
-                </a>
-              ) : (
-                <Button size="lg" className="bg-[#fb6163]/50 text-white/70 cursor-not-allowed" disabled>
-                  Email Unavailable
-                </Button>
-              )}
-              <Link href="/">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-white/30 text-white hover:bg-white/10 bg-transparent"
-                >
-                  View Full Portfolio
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      </div>
+            <Link href="/">
+              <Button size="lg" variant="outline">
+                View Full Portfolio
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
-      {/* Scroll to Top Button */}
-      {showScrollTop && (
+      {showScrollTop ? (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 bg-[#fb6163] hover:bg-[#fb6163]/90 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+          className="fixed bottom-6 right-6 z-50 rounded-full border border-primary/40 bg-primary p-3 text-primary-foreground shadow-lg transition-transform hover:scale-105 hover:border-primary/50 hover:bg-primary/90"
           aria-label={scrollButtonLabel}
           title={scrollButtonLabel}
         >
-          <ChevronUp className="w-6 h-6" />
+          <ChevronUp className="h-5 w-5" />
         </button>
-      )}
-    </div>
+      ) : null}
+    </PageLayout>
   )
 }
