@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getPrismaErrorMessage } from "@/lib/prisma-errors"
 import {
   SUPABASE_CONFIG_ERROR_MESSAGE,
   isSupabaseConfigured,
@@ -63,7 +64,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newTool, { status: 201 })
   } catch (error) {
-    console.error("Failed to create tool", error)
-    return new NextResponse("Internal Server Error", { status: 500 })
+    const message = getPrismaErrorMessage(error, "Failed to create tool")
+    console.error("Failed to create tool", message, error)
+    return NextResponse.json({ message }, { status: 500 })
   }
 }
