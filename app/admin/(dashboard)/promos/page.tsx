@@ -46,7 +46,7 @@ const promoSchema = z.object({
   description: z.string().optional(),
   linkLabel: z.string().optional(),
   linkHref: linkHrefSchema,
-  isEnabled: z.boolean().default(true),
+  isEnabled: z.boolean(),
   placement: z.nativeEnum(PromoPlacement),
   displayOrder: z.coerce.number().min(0, "Order must be 0 or greater"),
 })
