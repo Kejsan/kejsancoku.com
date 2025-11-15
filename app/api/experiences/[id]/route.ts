@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import prisma from "@/lib/prisma"
+import { getPrismaErrorMessage } from "@/lib/prisma-errors"
 import { getSafeAdminSession } from "@/lib/safe-session"
 
 type Params = { params: { id: string } }
@@ -50,8 +51,9 @@ export async function PUT(request: Request, { params }: Params) {
     })
     return NextResponse.json(experience)
   } catch (error) {
-    console.error('Failed to update experience', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    const message = getPrismaErrorMessage(error, "Failed to update experience")
+    console.error("Failed to update experience", message, error)
+    return NextResponse.json({ message }, { status: 500 })
   }
 }
 
@@ -83,7 +85,8 @@ export async function DELETE(_req: Request, { params }: Params) {
     })
     return NextResponse.json({ deleted: true })
   } catch (error) {
-    console.error('Failed to delete experience', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    const message = getPrismaErrorMessage(error, "Failed to delete experience")
+    console.error("Failed to delete experience", message, error)
+    return NextResponse.json({ message }, { status: 500 })
   }
 }

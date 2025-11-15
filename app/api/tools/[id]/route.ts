@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import { getAdminSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getPrismaErrorMessage } from "@/lib/prisma-errors"
 import {
   SUPABASE_CONFIG_ERROR_MESSAGE,
   isSupabaseConfigured,
@@ -58,8 +59,9 @@ export async function PUT(
 
     return NextResponse.json(updatedTool)
   } catch (error) {
-    console.error("Failed to update tool", error)
-    return new NextResponse("Internal Server Error", { status: 500 })
+    const message = getPrismaErrorMessage(error, "Failed to update tool")
+    console.error("Failed to update tool", message, error)
+    return NextResponse.json({ message }, { status: 500 })
   }
 }
 
@@ -107,7 +109,8 @@ export async function DELETE(
 
     return new NextResponse(null, { status: 204 })
   } catch (error) {
-    console.error("Failed to delete tool", error)
-    return new NextResponse("Internal Server Error", { status: 500 })
+    const message = getPrismaErrorMessage(error, "Failed to delete tool")
+    console.error("Failed to delete tool", message, error)
+    return NextResponse.json({ message }, { status: 500 })
   }
 }

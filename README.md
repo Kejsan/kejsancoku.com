@@ -17,3 +17,7 @@ The admin dashboard lives at `/admin` and now signs in through `/admin/login`. A
 ## Database migrations
 
 Netlify builds run with the `NETLIFY=true` environment variable, so the automated build pipeline skips `prisma migrate deploy`. Apply migrations from CI or manually before triggering a Netlify deploy to ensure the production database schema matches the application.
+
+Set both `DATABASE_URL` and `DIRECT_URL` in **every** Netlify context (production, branch deploys, and deploy previews). Netlify does
+not inherit variables between contexts, so explicitly provide the Supabase pooled connection string for `DATABASE_URL` and the direct
+connection string for `DIRECT_URL` in each context to keep Prisma migrations and runtime queries pointed at the same database.

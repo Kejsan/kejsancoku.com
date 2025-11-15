@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import prisma from "@/lib/prisma"
+import { getPrismaErrorMessage } from "@/lib/prisma-errors"
 import { getAdminSession } from "@/lib/auth"
 import {
   SUPABASE_CONFIG_ERROR_MESSAGE,
@@ -49,7 +50,8 @@ export async function POST(request: Request) {
     })
     return NextResponse.json(app)
   } catch (error) {
-    console.error('Failed to create web app', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    const message = getPrismaErrorMessage(error, "Failed to create web app")
+    console.error("Failed to create web app", message, error)
+    return NextResponse.json({ message }, { status: 500 })
   }
 }

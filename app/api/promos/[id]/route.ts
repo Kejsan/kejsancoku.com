@@ -3,6 +3,7 @@ import { PromoPlacement } from "@prisma/client"
 
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import prisma from "@/lib/prisma"
+import { getPrismaErrorMessage } from "@/lib/prisma-errors"
 import { getSafeAdminSession } from "@/lib/safe-session"
 
 function ensureString(value: unknown) {
@@ -135,8 +136,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
     return NextResponse.json(promo)
   } catch (error) {
-    console.error("[promos] Failed to update promo section", error)
-    return new NextResponse("Internal Server Error", { status: 500 })
+    const message = getPrismaErrorMessage(
+      error,
+      "Failed to update promo section",
+    )
+    console.error("[promos] Failed to update promo section", message, error)
+    return NextResponse.json({ message }, { status: 500 })
   }
 }
 
@@ -176,7 +181,11 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
 
     return new NextResponse(null, { status: 204 })
   } catch (error) {
-    console.error("[promos] Failed to delete promo section", error)
-    return new NextResponse("Internal Server Error", { status: 500 })
+    const message = getPrismaErrorMessage(
+      error,
+      "Failed to delete promo section",
+    )
+    console.error("[promos] Failed to delete promo section", message, error)
+    return NextResponse.json({ message }, { status: 500 })
   }
 }

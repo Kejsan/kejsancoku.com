@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import prisma from "@/lib/prisma"
+import { getPrismaErrorMessage } from "@/lib/prisma-errors"
 import { getAdminSession } from "@/lib/auth"
 import {
   SUPABASE_CONFIG_ERROR_MESSAGE,
@@ -57,8 +58,9 @@ export async function PUT(request: Request, { params }: Params) {
     })
     return NextResponse.json(app)
   } catch (error) {
-    console.error('Failed to update web app', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    const message = getPrismaErrorMessage(error, "Failed to update web app")
+    console.error("Failed to update web app", message, error)
+    return NextResponse.json({ message }, { status: 500 })
   }
 }
 
@@ -97,7 +99,8 @@ export async function DELETE(_req: Request, { params }: Params) {
     })
     return NextResponse.json({ deleted: true })
   } catch (error) {
-    console.error('Failed to delete web app', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    const message = getPrismaErrorMessage(error, "Failed to delete web app")
+    console.error("Failed to delete web app", message, error)
+    return NextResponse.json({ message }, { status: 500 })
   }
 }
