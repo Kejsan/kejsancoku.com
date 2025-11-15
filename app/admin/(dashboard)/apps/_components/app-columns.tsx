@@ -1,7 +1,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { ExternalLink, MoreHorizontal, Pencil, Copy, Trash2 } from "lucide-react"
+import { ExternalLink, MoreHorizontal, Pencil, Copy, Trash2, Eye } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -18,6 +18,7 @@ import type { SerializedWebApp } from "../serializers"
 export type AppRow = SerializedWebApp
 
 type ColumnHandlers = {
+  onView: (app: AppRow) => void
   onEdit: (app: AppRow) => void
   onDuplicate: (app: AppRow) => void
   onQuickDuplicate: (app: AppRow) => void
@@ -25,6 +26,7 @@ type ColumnHandlers = {
 }
 
 export function createAppColumns({
+  onView,
   onEdit,
   onDuplicate,
   onQuickDuplicate,
@@ -95,6 +97,10 @@ export function createAppColumns({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => onView(row.original)}>
+              <Eye className="mr-2 h-4 w-4" /> View
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onEdit(row.original)}>
               <Pencil className="mr-2 h-4 w-4" /> Edit
             </DropdownMenuItem>
