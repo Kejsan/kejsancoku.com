@@ -15,8 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 
 const linkHrefSchema = z
   .string()
-  .optional()
-  .transform((value) => value?.trim() ?? "")
+  .transform((value) => value.trim())
   .refine((value) => {
     if (!value) {
       return true
