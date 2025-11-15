@@ -101,6 +101,25 @@ model Tool {
   updatedAt   DateTime @updatedAt
 }
 
+enum PromoPlacement {
+  TOP_BAR
+  BOTTOM_BAR
+  PRE_FOOTER_CARD
+}
+
+model PromoSection {
+  id           Int             @id @default(autoincrement())
+  title        String?
+  description  String?
+  linkLabel    String?
+  linkHref     String?
+  placement    PromoPlacement  @default(PRE_FOOTER_CARD)
+  isEnabled    Boolean         @default(true)
+  displayOrder Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
 model Audit {
   id         Int      @id @default(autoincrement())
   actorEmail String

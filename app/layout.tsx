@@ -2,9 +2,12 @@ import type React from "react"
 import type { Metadata } from "next"
 import Script from "next/script"
 import { Inter } from "next/font/google"
+import { PromoPlacement } from "@prisma/client"
 import "./globals.css"
 import NewsletterPopup from "@/components/newsletter-popup"
 import StaticFooter from "@/components/layout/static-footer"
+import { PromoBar, PromoCardGrid } from "@/components/layout/promo-sections"
+import { getActivePromoSections, groupPromosByPlacement } from "@/lib/promos"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -15,11 +18,18 @@ export const metadata: Metadata = {
   generator: "v0.app",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const promoSections = await getActivePromoSections()
+  const groupedPromos = groupPromosByPlacement(promoSections)
+
+  const topPromo = groupedPromos[PromoPlacement.TOP_BAR][0] ?? null
+  const bottomPromo = groupedPromos[PromoPlacement.BOTTOM_BAR][0] ?? null
+  const preFooterPromos = groupedPromos[PromoPlacement.PRE_FOOTER_CARD]
+
   return (
     <html lang="en" className={inter.className}>
       <head>
@@ -41,9 +51,14 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body>
-        {children}
-        <StaticFooter />
+      <body className="antialiased">
+        {topPromo ? <PromoBar promo={topPromo} position="top" /> : null}
+        <div className="flex min-h-screen flex-col">
+          <main className="flex-1">{children}</main>
+          <PromoCardGrid promos={preFooterPromos} />
+          {bottomPromo ? <PromoBar promo={bottomPromo} position="bottom" /> : null}
+          <StaticFooter />
+        </div>
         <NewsletterPopup />
       </body>
     </html>
