@@ -347,6 +347,24 @@ async function main() {
     console.log(`Created/updated post with slug: ${result.slug}`)
   }
 
+  const publishedCount = await prisma.post.count({
+    where: {
+      status: PostStatus.PUBLISHED,
+      published: true,
+      publishedAt: { not: null },
+    },
+  })
+
+  if (publishedCount === 0) {
+    throw new Error(
+      "Seeding failed: no published posts with publishedAt were created.",
+    )
+  }
+
+  console.log(
+    `Verified ${publishedCount} published post${publishedCount === 1 ? "" : "s"} with publishedAt.`,
+  )
+
   await prisma.siteSettings.upsert({
     where: { id: 1 },
     update: {},

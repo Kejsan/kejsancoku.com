@@ -10,10 +10,13 @@ export async function GET(_req: Request, { params }: Params) {
       { status: 503 }
     )
   }
+  const now = new Date()
   const post = await prisma.post.findFirst({
     where: {
       slug: params.slug,
       status: 'PUBLISHED',
+      published: true,
+      publishedAt: { not: null, lte: now },
     },
   })
   if (!post) {

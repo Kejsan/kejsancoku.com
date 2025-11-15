@@ -12,6 +12,26 @@ import { buildAuditDiff, recordAudit } from "@/lib/audit"
 import { prisma } from "@/lib/prisma"
 import { getSafeAdminSession } from "@/lib/safe-session"
 
+const PUBLIC_POST_PATHS = ["/", "/blog"] as const
+
+type PublishState = Pick<Post, "status" | "published">
+
+function wasPublished(post: PublishState | null | undefined) {
+  return Boolean(post && (post.status === "PUBLISHED" || post.published))
+}
+
+function revalidatePublicPostRoutesIfNeeded(
+  ...posts: Array<PublishState | null | undefined>
+) {
+  if (!posts.some(wasPublished)) {
+    return
+  }
+
+  for (const path of PUBLIC_POST_PATHS) {
+    revalidatePath(path)
+  }
+}
+
 type ActionError = {
   ok: false
   message: string
@@ -161,6 +181,7 @@ export async function createPost(
       diff: buildAuditDiff(null, post),
     })
     revalidatePath("/admin/posts")
+    revalidatePublicPostRoutesIfNeeded(post)
 
     return { ok: true, data: serializePost(post) }
   } catch (error) {
@@ -205,6 +226,7 @@ export async function updatePost(
       diff: buildAuditDiff(existing, post),
     })
     revalidatePath("/admin/posts")
+    revalidatePublicPostRoutesIfNeeded(existing, post)
 
     return { ok: true, data: serializePost(post) }
   } catch (error) {
@@ -234,6 +256,7 @@ export async function deletePost(slug: string): Promise<ActionResult<{ slug: str
       diff: buildAuditDiff(post, null),
     })
     revalidatePath("/admin/posts")
+    revalidatePublicPostRoutesIfNeeded(post)
     return { ok: true, data: { slug } }
   } catch (error) {
     console.error("Failed to delete post", error)
@@ -324,6 +347,7 @@ export async function bulkDeletePosts(slugs: string[]): Promise<ActionResult<{ c
     }
 
     revalidatePath("/admin/posts")
+    revalidatePublicPostRoutesIfNeeded(...posts)
     return { ok: true, data: { count: posts.length } }
   } catch (error) {
     console.error("Failed to delete posts", error)
@@ -392,6 +416,7 @@ export async function bulkPublishPosts(
     )
 
     revalidatePath("/admin/posts")
+    revalidatePublicPostRoutesIfNeeded(...updated)
 
     return {
       ok: true,
@@ -464,6 +489,7 @@ export async function bulkUnpublishPosts(
     )
 
     revalidatePath("/admin/posts")
+    revalidatePublicPostRoutesIfNeeded(...posts, ...updated)
 
     return {
       ok: true,
