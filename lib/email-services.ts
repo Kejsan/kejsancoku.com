@@ -22,29 +22,121 @@ class EmailService {
   }
 
   async subscribe(email: string, firstName?: string, lastName?: string): Promise<SubscribeResponse> {
+    const configValidation = this.validateConfiguration()
+
+    if (!configValidation.valid) {
+      const missingConfigMessage = `Missing configuration for provider "${this.config.provider}": ${configValidation.missing.join(", ")}`
+
+      console.warn("[EmailService]", missingConfigMessage)
+
+      return {
+        success: false,
+        message: "Newsletter subscriptions are temporarily unavailable. Please try again later.",
+        error: missingConfigMessage,
+      }
+    }
+
     try {
       switch (this.config.provider) {
         case "mailchimp":
-          return await this.subscribeMailchimp(email, firstName, lastName)
+          return this.logSubscriptionResult(
+            email,
+            await this.subscribeMailchimp(email, firstName, lastName),
+          )
         case "convertkit":
-          return await this.subscribeConvertKit(email, firstName, lastName)
+          return this.logSubscriptionResult(
+            email,
+            await this.subscribeConvertKit(email, firstName, lastName),
+          )
         case "emailoctopus":
-          return await this.subscribeEmailOctopus(email, firstName, lastName)
+          return this.logSubscriptionResult(
+            email,
+            await this.subscribeEmailOctopus(email, firstName, lastName),
+          )
         case "buttondown":
-          return await this.subscribeButtondown(email, firstName, lastName)
+          return this.logSubscriptionResult(
+            email,
+            await this.subscribeButtondown(email, firstName, lastName),
+          )
         case "custom":
-          return await this.subscribeCustom(email, firstName, lastName)
+          return this.logSubscriptionResult(
+            email,
+            await this.subscribeCustom(email, firstName, lastName),
+          )
         default:
           throw new Error("Unsupported email service provider")
       }
     } catch (error) {
-      console.error("Email subscription error:", error)
+      console.error(
+        `[EmailService] Subscription error for provider ${this.config.provider} and email ${this.maskEmail(email)}:`,
+        error,
+      )
       return {
         success: false,
         message: "Something went wrong. Please try again.",
         error: error instanceof Error ? error.message : "Unknown error",
       }
     }
+  }
+
+  private validateConfiguration(): { valid: boolean; missing: string[] } {
+    const missing: string[] = []
+
+    switch (this.config.provider) {
+      case "mailchimp":
+        if (!this.config.apiKey) missing.push("MAILCHIMP_API_KEY")
+        if (!this.config.audienceId) missing.push("MAILCHIMP_AUDIENCE_ID")
+        break
+      case "convertkit":
+        if (!this.config.apiKey) missing.push("CONVERTKIT_API_KEY")
+        if (!this.config.formId) missing.push("CONVERTKIT_FORM_ID")
+        break
+      case "emailoctopus":
+        if (!this.config.apiKey) missing.push("EMAILOCTOPUS_API_KEY")
+        if (!this.config.listId) missing.push("EMAILOCTOPUS_LIST_ID")
+        break
+      case "buttondown":
+        if (!this.config.apiKey) missing.push("BUTTONDOWN_API_KEY")
+        break
+      case "custom":
+        if (!this.config.customEndpoint) missing.push("CUSTOM_EMAIL_ENDPOINT")
+        break
+      default:
+        missing.push("EMAIL_SERVICE_PROVIDER")
+    }
+
+    return {
+      valid: missing.length === 0,
+      missing,
+    }
+  }
+
+  private maskEmail(email: string): string {
+    const [localPart, domain] = email.split("@")
+    if (!domain) return "[invalid-email]"
+    if (localPart.length <= 2) {
+      return `${localPart[0] ?? "*"}***@${domain}`
+    }
+    return `${localPart[0]}***${localPart[localPart.length - 1]}@${domain}`
+  }
+
+  private logSubscriptionResult(email: string, result: SubscribeResponse): SubscribeResponse {
+    const maskedEmail = this.maskEmail(email)
+
+    if (result.success) {
+      console.info("[EmailService] Subscription successful", {
+        provider: this.config.provider,
+        email: maskedEmail,
+      })
+    } else {
+      console.warn("[EmailService] Subscription unsuccessful", {
+        provider: this.config.provider,
+        email: maskedEmail,
+        message: result.message,
+      })
+    }
+
+    return result
   }
 
   private async subscribeMailchimp(email: string, firstName?: string, lastName?: string): Promise<SubscribeResponse> {
