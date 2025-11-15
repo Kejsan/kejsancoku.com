@@ -69,15 +69,19 @@ export default function ContactSection({ settings, isLoading = false, error = nu
     )
   }
 
-  const emailHref = settings?.email ? `mailto:${settings.email}` : null
+  const emailHref = settings?.email?.trim() ? `mailto:${settings.email.trim()}` : null
   const headline = settings?.contactHeadline || "Let's Grow Your Digital Presence"
   const description =
     settings?.contactDescription ||
     "Ready to scale your brand's digital presence? I specialize in SEO strategy, content marketing, and growth-driven campaigns that deliver measurable results."
   const location = settings?.contactLocation
   const availability = settings?.contactAvailability
-  const ctaLabel = settings?.contactCtaLabel || (emailHref ? "Email Me" : "Get in Touch")
-  const ctaHref = settings?.contactCtaHref || (emailHref ?? undefined)
+  const sanitizedContactCtaHref = settings?.contactCtaHref?.trim()
+  const fallbackHref = emailHref ?? "/contact"
+  const ctaHref = sanitizedContactCtaHref || fallbackHref
+  const ctaLabel =
+    settings?.contactCtaLabel?.trim() || (ctaHref.startsWith("mailto:") ? "Email Me" : "Contact Me")
+  const isExternalLink = /^https?:\/\//.test(ctaHref)
 
   const availableSocialLinks = (Object.keys(SOCIAL_LINKS) as (keyof typeof SOCIAL_LINKS)[])
     .map((key) => {
@@ -115,26 +119,12 @@ export default function ContactSection({ settings, isLoading = false, error = nu
           </div>
         )}
         <div className="flex flex-wrap justify-center gap-6">
-          {ctaHref ? (
-            <a href={ctaHref} target={ctaHref.startsWith("mailto:") ? "_self" : "_blank"} rel="noopener noreferrer">
-              <Button size="lg" className="bg-[#fb6163] hover:bg-[#fb6163]/90 text-white">
-                <Mail className="w-5 h-5 mr-2" />
-                {ctaLabel}
-              </Button>
-            </a>
-          ) : emailHref ? (
-            <a href={emailHref}>
-              <Button size="lg" className="bg-[#fb6163] hover:bg-[#fb6163]/90 text-white">
-                <Mail className="w-5 h-5 mr-2" />
-                {ctaLabel}
-              </Button>
-            </a>
-          ) : (
-            <Button size="lg" className="bg-[#fb6163]/50 text-white/70 cursor-not-allowed" disabled>
+          <a href={ctaHref} target={isExternalLink ? "_blank" : "_self"} rel={isExternalLink ? "noopener noreferrer" : undefined}>
+            <Button size="lg" className="bg-[#fb6163] hover:bg-[#fb6163]/90 text-white">
               <Mail className="w-5 h-5 mr-2" />
-              Email Unavailable
+              {ctaLabel}
             </Button>
-          )}
+          </a>
           {availableSocialLinks.map(({ key, url, icon: Icon, label }) => (
             <a key={key} href={url} target="_blank" rel="noopener noreferrer">
               <Button
@@ -148,7 +138,9 @@ export default function ContactSection({ settings, isLoading = false, error = nu
             </a>
           ))}
           {!emailHref && availableSocialLinks.length === 0 && (
-            <p className="w-full text-white/60 text-sm mt-4">Contact details will be updated soon.</p>
+            <p className="w-full text-white/60 text-sm mt-4">
+              Prefer email updates? Use the contact button above and I&apos;ll respond soon.
+            </p>
           )}
         </div>
       </div>
