@@ -1,5 +1,5 @@
 import Link from "next/link"
-import type { Prisma } from "@prisma/client"
+import type { Audit, Prisma } from "@prisma/client"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -96,7 +96,7 @@ export default async function AuditPage({ searchParams }: PageProps) {
     ]
   }
 
-  let audits: Prisma.Audit[] = []
+  let audits: Audit[] = []
   let entityTypeRows: { entityType: string }[] = []
   let isAuditTableMissing = false
 
