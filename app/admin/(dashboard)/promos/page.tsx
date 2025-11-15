@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { PromoPlacement } from "@prisma/client"
 import { z } from "zod"
 import { toast } from "sonner"
 
@@ -34,6 +33,14 @@ const linkHrefSchema = z
       return false
     }
   }, "Enter a valid URL, anchor, or relative path")
+
+const PromoPlacement = {
+  TOP_BAR: "TOP_BAR",
+  BOTTOM_BAR: "BOTTOM_BAR",
+  PRE_FOOTER_CARD: "PRE_FOOTER_CARD",
+} as const
+
+type PromoPlacement = (typeof PromoPlacement)[keyof typeof PromoPlacement]
 
 const promoSchema = z.object({
   title: z.string().min(1, "Title is required"),

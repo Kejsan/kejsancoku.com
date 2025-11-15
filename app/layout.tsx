@@ -11,6 +11,8 @@ import { getActivePromoSections, groupPromosByPlacement } from "@/lib/promos"
 
 const inter = Inter({ subsets: ["latin"] })
 
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "Kejsan - Digital Marketing Specialist",
   description:
