@@ -26,6 +26,7 @@ import {
 import { workSampleFormSchema, type WorkSampleFormValues } from "../schema"
 import type { SerializedWorkSample } from "../serializers"
 import { WorkSampleFormDrawer, type WorkSampleFormDrawerMode } from "./work-sample-form-drawer"
+import { WorkSamplePreviewDrawer } from "./work-sample-preview-drawer"
 import { createWorkSampleColumns, type WorkSampleRow } from "./work-sample-columns"
 
 const EMPTY_FORM: WorkSampleFormValues = {
@@ -58,6 +59,7 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
   const [drawerState, setDrawerState] = React.useState<DrawerState | null>(null)
   const [deleteTarget, setDeleteTarget] = React.useState<WorkSampleRow | null>(null)
   const [bulkDeleteState, setBulkDeleteState] = React.useState<BulkDeleteState | null>(null)
+  const [previewSample, setPreviewSample] = React.useState<WorkSampleRow | null>(null)
 
   const [isPending, startTransition] = useTransition()
   const [isBulkPending, startBulkTransition] = useTransition()
@@ -253,15 +255,20 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
     [startQuickTransition],
   )
 
+  const handleView = React.useCallback((sample: WorkSampleRow) => {
+    setPreviewSample(sample)
+  }, [])
+
   const columns = React.useMemo(
     () =>
       createWorkSampleColumns({
+        onView: handleView,
         onEdit: openEditDrawer,
         onDuplicate: openDuplicateDrawer,
         onQuickDuplicate: handleQuickDuplicate,
         onDelete: handleDelete,
       }),
-    [handleDelete, handleQuickDuplicate, openDuplicateDrawer, openEditDrawer],
+    [handleDelete, handleQuickDuplicate, handleView, openDuplicateDrawer, openEditDrawer],
   )
 
   const drawerDefaultValues = React.useMemo((): WorkSampleFormValues => {
@@ -381,6 +388,16 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <WorkSamplePreviewDrawer
+        sample={previewSample}
+        open={previewSample !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewSample(null)
+          }
+        }}
+      />
     </>
   )
 }

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { DataTable } from "@/components/admin/ui/data-table"
@@ -54,6 +55,7 @@ export function AppsShell({ initialApps }: AppsShellProps) {
   React.useEffect(() => {
     appsRef.current = apps
   }, [apps])
+  const router = useRouter()
 
   const [drawerState, setDrawerState] = React.useState<DrawerState | null>(null)
   const [deleteTarget, setDeleteTarget] = React.useState<AppRow | null>(null)
@@ -253,15 +255,24 @@ export function AppsShell({ initialApps }: AppsShellProps) {
     [startQuickTransition],
   )
 
+  const handleView = React.useCallback(
+    (app: AppRow) => {
+      if (!app.id || app.id <= 0) return
+      router.push(`/apps/${app.id}`)
+    },
+    [router],
+  )
+
   const columns = React.useMemo(
     () =>
       createAppColumns({
+        onView: handleView,
         onEdit: openEditDrawer,
         onDuplicate: openDuplicateDrawer,
         onQuickDuplicate: handleQuickDuplicate,
         onDelete: handleDelete,
       }),
-    [handleDelete, handleQuickDuplicate, openDuplicateDrawer, openEditDrawer],
+    [handleDelete, handleQuickDuplicate, handleView, openDuplicateDrawer, openEditDrawer],
   )
 
   const drawerDefaultValues = React.useMemo((): WebAppFormValues => {
