@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { isMissingAuditTableError } from "@/lib/audit"
 import prisma from "@/lib/prisma"
 
 type DashboardStat = {
@@ -103,9 +104,11 @@ function normalizeAuditEntry(entry: RawAuditEntry, index: number): AuditEntry {
   }
 }
 
-async function getAuditEntries(): Promise<AuditEntry[]> {
+type AuditEntriesResult = { entries: AuditEntry[]; missingTable: boolean }
+
+async function getAuditEntries(): Promise<AuditEntriesResult> {
   if (!prisma) {
-    return []
+    return { entries: [], missingTable: false }
   }
 
   const prismaAny = prisma as Record<string, any>
@@ -116,7 +119,7 @@ async function getAuditEntries(): Promise<AuditEntry[]> {
   })
 
   if (!auditClientKey) {
-    return []
+    return { entries: [], missingTable: false }
   }
 
   try {
@@ -130,12 +133,20 @@ async function getAuditEntries(): Promise<AuditEntry[]> {
     })
 
     if (!Array.isArray(entries)) {
-      return []
+      return { entries: [], missingTable: false }
     }
 
-    return entries.map((entry, index) => normalizeAuditEntry(entry, index))
+    return {
+      entries: entries.map((entry, index) => normalizeAuditEntry(entry, index)),
+      missingTable: false,
+    }
   } catch (error) {
-    return []
+    if (isMissingAuditTableError(error)) {
+      console.warn("Audit table missing. Run migrations to enable audit logging.")
+      return { entries: [], missingTable: true }
+    }
+    console.error("Failed to load audit entries", error)
+    return { entries: [], missingTable: false }
   }
 }
 
@@ -255,10 +266,13 @@ async function getDashboardStats(): Promise<DashboardStat[]> {
 }
 
 export default async function AdminDashboard() {
-  const [stats, auditEntries] = await Promise.all([
+  const [stats, auditEntriesResult] = await Promise.all([
     getDashboardStats(),
     getAuditEntries(),
   ])
+
+  const auditEntries = auditEntriesResult.entries
+  const isAuditTableMissing = auditEntriesResult.missingTable
 
   const hasAnyContent = stats.some((stat) => stat.count > 0)
 
@@ -327,7 +341,15 @@ export default async function AdminDashboard() {
             </Badge>
           </CardHeader>
           <CardContent>
-            {auditEntries.length ? (
+            {isAuditTableMissing ? (
+              <div className="rounded-lg border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Audit logging isn&apos;t enabled yet.</p>
+                <p>
+                  Run <code>pnpm exec prisma migrate deploy</code> against your Supabase database to create the{" "}
+                  <code>Audit</code> table and enable activity tracking.
+                </p>
+              </div>
+            ) : auditEntries.length ? (
               <ul className="space-y-4">
                 {auditEntries.map((entry) => (
                   <li key={entry.id} className="flex items-start justify-between gap-4">

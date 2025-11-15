@@ -21,6 +21,12 @@ Navigate to **Netlify Dashboard** → **Site Settings** → **Build & Deploy** �
 
 Verify all 5 variables above have values set.
 
+## Database Migrations (Supabase)
+
+- [ ] Run `pnpm exec prisma migrate deploy` locally with `DATABASE_URL`/`DIRECT_URL` pointing at your Supabase instance before deploying.
+- [ ] Confirm the `Audit` table exists in Supabase (SQL editor: `select * from "Audit" limit 1;`).
+- [ ] If the table is missing, rerun the command above to apply the `20250904091500_add_audit_table` migration so audit logging works.
+
 ## Deployment Steps
 
 1. **Push these changes to main branch:**

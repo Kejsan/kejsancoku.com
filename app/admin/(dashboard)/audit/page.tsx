@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
+import { isMissingAuditTableError } from "@/lib/audit"
 import prisma from "@/lib/prisma"
 
 const AUDIT_ACTIONS = ["CREATE", "UPDATE", "DELETE"] as const
@@ -95,21 +96,41 @@ export default async function AuditPage({ searchParams }: PageProps) {
     ]
   }
 
-  const [audits, entityTypeRows] = await Promise.all([
-    prisma.audit.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    }),
-    prisma.audit.findMany({
-      select: { entityType: true },
-      distinct: ["entityType"],
-    }),
-  ])
+  let audits: Prisma.Audit[] = []
+  let entityTypeRows: { entityType: string }[] = []
+  let isAuditTableMissing = false
+
+  try {
+    const [auditRows, typeRows] = await Promise.all([
+      prisma.audit.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
+      prisma.audit.findMany({
+        select: { entityType: true },
+        distinct: ["entityType"],
+      }),
+    ])
+    audits = auditRows
+    entityTypeRows = typeRows
+  } catch (error) {
+    if (isMissingAuditTableError(error)) {
+      console.warn("Audit table missing. Run migrations to enable audit logging.")
+      audits = []
+      entityTypeRows = []
+      isAuditTableMissing = true
+    } else {
+      console.error("Failed to load audit entries", error)
+      throw error
+    }
+  }
 
   const entityTypes = Array.from(
     new Set(entityTypeRows.map((row) => row.entityType)),
   ).sort((a, b) => a.localeCompare(b))
+
+  const showEmptyState = !isAuditTableMissing && audits.length === 0
 
   return (
     <div className="space-y-6 p-6">
@@ -209,7 +230,19 @@ export default async function AuditPage({ searchParams }: PageProps) {
         </Table>
       </div>
 
-      {audits.length === 0 && (
+      {isAuditTableMissing && (
+        <div className="rounded-md border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
+          <h2 className="text-lg font-medium text-foreground">Audit table missing</h2>
+          <p className="mt-2">
+            Deploy the latest Prisma migrations with
+            <code className="mx-1">pnpm exec prisma migrate deploy</code>
+            using your Supabase connection to create the <code>Audit</code> table.
+          </p>
+          <p className="mt-2">Once the table exists, refresh this page to review activity logs.</p>
+        </div>
+      )}
+
+      {showEmptyState && (
         <div className="rounded-md border border-dashed p-8 text-center">
           <h2 className="text-lg font-medium">No audit entries found</h2>
           <p className="mt-2 text-sm text-muted-foreground">

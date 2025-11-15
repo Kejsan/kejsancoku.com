@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useId, useState } from "react"
 import {
   useForm,
   UseFormReturn,
@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 
@@ -39,6 +40,8 @@ export function EditDialog<T extends FieldValues>({
 }: EditDialogProps<T>) {
   const form = useForm<T>({ resolver: zodResolver(schema), defaultValues })
   const [error, setError] = useState<string | null>(null)
+  const titleId = useId()
+  const descriptionId = useId()
 
   useEffect(() => {
     form.reset(defaultValues)
@@ -57,9 +60,12 @@ export function EditDialog<T extends FieldValues>({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent aria-labelledby={titleId} aria-describedby={descriptionId}>
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle id={titleId}>{title}</DialogTitle>
+          <DialogDescription id={descriptionId} className="sr-only">
+            Update the selected entry and save your changes.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           {children(form)}
