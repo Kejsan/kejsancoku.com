@@ -7,6 +7,7 @@ import {
   House,
   Layers,
   LayoutTemplate,
+  Megaphone,
 } from "lucide-react"
 
 export type AdminNavItem = {
@@ -52,6 +53,12 @@ export const adminNavItems: AdminNavItem[] = [
     label: "Work Samples",
     icon: LayoutTemplate,
     description: "Highlight portfolio work",
+  },
+  {
+    href: "/admin/promos",
+    label: "Promos",
+    icon: Megaphone,
+    description: "Control promo bars and featured offers",
   },
   {
     href: "/admin/audit",
