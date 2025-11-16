@@ -100,3 +100,33 @@ export async function recordAudit({
     console.error("Failed to record audit entry", error)
   }
 }
+
+export function isMissingAuditTableError(error: unknown): boolean {
+  if (!error) return false
+
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2021" &&
+    typeof error.meta?.entity_name === "string"
+  ) {
+    return error.meta.entity_name.toLowerCase().includes("audit")
+  }
+
+  if (error instanceof Prisma.PrismaClientUnknownRequestError) {
+    const message = typeof error.message === "string" ? error.message.toLowerCase() : ""
+
+    if (!message.includes("audit")) return false
+
+    if (message.includes("permission denied")) return false
+
+    return ["does not exist", "no such table", "undefined table", "missing table"].some(
+      (phrase) => phrase.length > 0 && message.includes(phrase),
+    )
+  }
+
+  if (error instanceof Error) {
+    return error.message.toLowerCase().includes("audit") && error.message.includes("does not exist")
+  }
+
+  return false
+}
