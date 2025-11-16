@@ -113,7 +113,15 @@ export function isMissingAuditTableError(error: unknown): boolean {
   }
 
   if (error instanceof Prisma.PrismaClientUnknownRequestError) {
-    return typeof error.message === "string" && error.message.includes("Audit")
+    const message = typeof error.message === "string" ? error.message.toLowerCase() : ""
+
+    if (!message.includes("audit")) return false
+
+    if (message.includes("permission denied")) return false
+
+    return ["does not exist", "no such table", "undefined table", "missing table"].some(
+      (phrase) => phrase.length > 0 && message.includes(phrase),
+    )
   }
 
   if (error instanceof Error) {
