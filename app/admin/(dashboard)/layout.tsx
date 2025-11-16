@@ -1,9 +1,8 @@
 import Link from "next/link"
 import type { ReactNode } from "react"
-import { redirect } from "next/navigation"
 import { AlertTriangle } from "lucide-react"
+import { redirect } from "next/navigation"
 
-import { adminNavItems } from "@/app/admin/nav-items"
 import { DashboardLayout } from "@/components/admin/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { getAdminSession } from "@/lib/auth"
@@ -17,18 +16,16 @@ export const dynamic = "force-dynamic"
 export default async function AdminDashboardLayout({ children }: { children: ReactNode }) {
   if (!isSupabaseConfigured) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-6 py-12">
-        <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border bg-background p-8 text-center shadow-sm">
-          <AlertTriangle className="h-12 w-12 text-amber-500" aria-hidden />
-          <div className="space-y-1">
-            <h1 className="text-xl font-semibold">Supabase configuration required</h1>
-            <p className="text-sm text-muted-foreground">{SUPABASE_CONFIG_ERROR_MESSAGE}</p>
-          </div>
+      <DashboardErrorState
+        icon={<AlertTriangle className="h-12 w-12 text-amber-500" aria-hidden />}
+        title="Supabase configuration required"
+        message={SUPABASE_CONFIG_ERROR_MESSAGE}
+        actions={
           <Button asChild>
             <Link href="/">Return home</Link>
           </Button>
-        </div>
-      </div>
+        }
+      />
     )
   }
 
@@ -44,15 +41,11 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
 
   if (sessionError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-6 py-12">
-        <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border bg-background p-8 text-center shadow-sm">
-          <AlertTriangle className="h-12 w-12 text-destructive" aria-hidden />
-          <div className="space-y-1">
-            <h1 className="text-xl font-semibold">Authentication error</h1>
-            <p className="text-sm text-muted-foreground">
-              We encountered an error while checking your admin credentials. Please try signing in again.
-            </p>
-          </div>
+      <DashboardErrorState
+        icon={<AlertTriangle className="h-12 w-12 text-destructive" aria-hidden />}
+        title="Authentication error"
+        message="We encountered an error while checking your admin credentials. Please try signing in again."
+        actions={
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button asChild>
               <Link href="/admin/login">Sign in</Link>
@@ -61,8 +54,8 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
               <Link href="/">Return home</Link>
             </Button>
           </div>
-        </div>
-      </div>
+        }
+      />
     )
   }
 
@@ -79,6 +72,30 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
       }}
     >
       {children}
+    </DashboardLayout>
+  )
+}
+
+type DashboardErrorStateProps = {
+  icon: ReactNode
+  title: string
+  message: ReactNode
+  actions?: ReactNode
+}
+
+function DashboardErrorState({ icon, title, message, actions }: DashboardErrorStateProps) {
+  return (
+    <DashboardLayout>
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-6 py-12">
+        <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border bg-background p-8 text-center shadow-sm">
+          {icon}
+          <div className="space-y-1">
+            <h1 className="text-xl font-semibold">{title}</h1>
+            <p className="text-sm text-muted-foreground">{message}</p>
+          </div>
+          {actions}
+        </div>
+      </div>
     </DashboardLayout>
   )
 }
