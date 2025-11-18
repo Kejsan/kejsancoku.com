@@ -3,22 +3,19 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { getPrismaErrorMessage } from "@/lib/prisma-errors"
 
-function formatExperienceSummary(experience: {
-  id: number
-  title: string
-  company: string
-  period: string | null
-  location: string | null
-  description: string | null
-}) {
-  return {
-    id: String(experience.id),
-    title: experience.title,
-    company: experience.company,
-    period: experience.period,
-    location: experience.location,
-    description: experience.description,
-  }
+const MAX_DESCRIPTION_LENGTH = 200
+
+function truncate(text: string, maxLength: number) {
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, maxLength - 1).trimEnd()}…`
+}
+
+function buildPreviewDescription(
+  description?: string | null,
+  fullDescription?: string | null,
+) {
+  const source = description || fullDescription
+  return source ? truncate(source, MAX_DESCRIPTION_LENGTH) : null
 }
 
 export async function GET() {
@@ -31,21 +28,28 @@ export async function GET() {
 
   try {
     const experiences = await prisma.experience.findMany({
-      orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
-      select: {
-        id: true,
-        title: true,
-        company: true,
-        period: true,
-        location: true,
-        description: true,
-      },
+      orderBy: [
+        { startDate: "desc" },
+        { createdAt: "desc" },
+      ],
     })
 
-    return NextResponse.json(experiences.map(formatExperienceSummary))
+    const payload = experiences.map((experience) => ({
+      id: String(experience.id),
+      title: experience.title,
+      company: experience.company,
+      period: experience.period ?? null,
+      location: experience.location ?? null,
+      description: buildPreviewDescription(
+        experience.description,
+        experience.fullDescription,
+      ),
+    }))
+
+    return NextResponse.json(payload)
   } catch (error) {
-    const message = getPrismaErrorMessage(error, "Failed to load experiences summary")
-    console.error("Failed to load experiences summary", message, error)
+    const message = getPrismaErrorMessage(error, "Failed to load experiences")
+    console.error("Failed to load experiences", message, error)
     return NextResponse.json({ message }, { status: 500 })
   }
 }

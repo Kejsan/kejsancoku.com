@@ -1,22 +1,14 @@
 import { NextResponse } from "next/server"
 
-import prisma from "@/lib/prisma"
+import { buildAuditDiff, recordAudit } from "@/lib/audit"
+import { getAdminSession } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 import { getPrismaErrorMessage } from "@/lib/prisma-errors"
-import { coerceStringArray } from "@/app/admin/(dashboard)/experiences/parsers"
-
-interface PublicSkill {
-  name: string
-  slug: string
-  frequency: number
-}
-
-function toSlug(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "")
-}
+import {
+  SUPABASE_CONFIG_ERROR_MESSAGE,
+  isSupabaseConfigured,
+} from "@/lib/supabaseClient"
+import { normalizeSkillPayload } from "./utils"
 
 export async function GET() {
   if (!prisma) {
@@ -27,43 +19,63 @@ export async function GET() {
   }
 
   try {
-    const experiences = await prisma.experience.findMany({
-      select: { skills: true },
-    })
-
-    const skillsMap = new Map<string, PublicSkill>()
-
-    experiences.forEach((experience) => {
-      coerceStringArray(experience.skills).forEach((skillName) => {
-        const trimmed = skillName.trim()
-        if (!trimmed) return
-
-        const slug = toSlug(trimmed)
-        const existing = skillsMap.get(slug)
-
-        if (existing) {
-          existing.frequency += 1
-        } else {
-          skillsMap.set(slug, {
-            name: trimmed,
-            slug,
-            frequency: 1,
-          })
-        }
-      })
-    })
-
-    const skills = Array.from(skillsMap.values()).sort((a, b) => {
-      if (b.frequency !== a.frequency) {
-        return b.frequency - a.frequency
-      }
-      return a.name.localeCompare(b.name)
+    const skills = await prisma.skill.findMany({
+      orderBy: [
+        { level: "desc" },
+        { name: "asc" },
+      ],
     })
 
     return NextResponse.json(skills)
   } catch (error) {
     const message = getPrismaErrorMessage(error, "Failed to load skills")
     console.error("Failed to load skills", message, error)
+    return NextResponse.json({ message }, { status: 500 })
+  }
+}
+
+export async function POST(request: Request) {
+  if (!isSupabaseConfigured) {
+    return NextResponse.json(
+      { error: SUPABASE_CONFIG_ERROR_MESSAGE },
+      { status: 503 },
+    )
+  }
+
+  const session = await getAdminSession()
+  if (!session) {
+    return new NextResponse(null, { status: 401 })
+  }
+
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "Database not configured" },
+      { status: 503 },
+    )
+  }
+
+  const body = await request.json().catch(() => null)
+  const parsed = normalizeSkillPayload(body)
+
+  if (!parsed.ok) {
+    return NextResponse.json({ message: parsed.message }, { status: 400 })
+  }
+
+  try {
+    const skill = await prisma.skill.create({ data: parsed.data })
+
+    await recordAudit({
+      actorEmail: session.user.email,
+      entityType: "Skill",
+      entityId: skill.id,
+      action: "CREATE",
+      diff: buildAuditDiff(null, skill),
+    })
+
+    return NextResponse.json(skill, { status: 201 })
+  } catch (error) {
+    const message = getPrismaErrorMessage(error, "Failed to create skill")
+    console.error("Failed to create skill", message, error)
     return NextResponse.json({ message }, { status: 500 })
   }
 }
