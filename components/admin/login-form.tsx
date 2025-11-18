@@ -14,12 +14,6 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabaseClient"
 
-const configuredAdminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL
-
-const USERNAME_OVERRIDES = Object.fromEntries(
-  Object.entries({ kejsan: configuredAdminEmail ?? "" }).filter(([, email]) => email),
-)
-
 type UsernameLookupResult = {
   email: string | null
 }
@@ -87,10 +81,6 @@ export function AdminLoginForm() {
       }
 
       const normalized = trimmed.toLowerCase()
-
-      if (normalized in USERNAME_OVERRIDES) {
-        return USERNAME_OVERRIDES[normalized]
-      }
 
       const { data, error } = await supabase
         .from("profiles")
@@ -216,16 +206,16 @@ export function AdminLoginForm() {
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="identifier">Email or username</Label>
-          <Input
-            id="identifier"
-            name="identifier"
-            type="text"
-            autoComplete="username"
-            placeholder="you@example.com or kejsan"
-            value={identifier}
-            onChange={(event) => setIdentifier(event.target.value)}
-            disabled={submitting}
+            <Label htmlFor="identifier">Email or username</Label>
+            <Input
+              id="identifier"
+              name="identifier"
+              type="text"
+              autoComplete="username"
+              placeholder="you@example.com or your username"
+              value={identifier}
+              onChange={(event) => setIdentifier(event.target.value)}
+              disabled={submitting}
             required
           />
         </div>
@@ -233,7 +223,7 @@ export function AdminLoginForm() {
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
             <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">
-              Forgot it? Contact Kejsan.
+              Forgot it? Contact the site administrator.
             </Link>
           </div>
           <Input
