@@ -8,6 +8,7 @@ import {
   Layers,
   LayoutTemplate,
   Megaphone,
+  Sparkles,
 } from "lucide-react"
 
 export type AdminNavItem = {
@@ -47,6 +48,12 @@ export const adminNavItems: AdminNavItem[] = [
     label: "Tools",
     icon: Hammer,
     description: "Edit marketing tools collection",
+  },
+  {
+    href: "/admin/skills",
+    label: "Skills",
+    icon: Sparkles,
+    description: "Manage proficiencies and categories",
   },
   {
     href: "/admin/worksamples",

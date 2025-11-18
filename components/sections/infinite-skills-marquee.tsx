@@ -4,9 +4,13 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 
 interface Skill {
+  id: number
   name: string
   slug: string
-  frequency: number
+  description?: string | null
+  icon?: string | null
+  level: number
+  category?: string | null
 }
 
 export default function InfiniteSkillsMarquee() {
@@ -66,10 +70,17 @@ export default function InfiniteSkillsMarquee() {
         <Link
           key={`${skill.slug}-${index}`}
           href={`/skills-experience#skill-${skill.slug}`}
-          className="group mr-4 inline-flex min-w-[12rem] items-center gap-3 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm text-white shadow-sm backdrop-blur hover:border-white/30 hover:bg-white/10"
+          className="group mr-4 inline-flex min-w-[14rem] items-center gap-3 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm text-white shadow-sm backdrop-blur hover:border-white/30 hover:bg-white/10"
         >
-          <span className="text-[#fb6163]">{skill.name}</span>
-          <span className="text-white/70">{skill.frequency}+ mentions</span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg">
+            {skill.icon || "★"}
+          </span>
+          <div className="flex flex-col text-left leading-tight">
+            <span className="font-medium text-[#fb6163]">{skill.name}</span>
+            <span className="text-xs text-white/70">
+              Level {skill.level} · {skill.category || "General"}
+            </span>
+          </div>
         </Link>
       ))}
     </div>

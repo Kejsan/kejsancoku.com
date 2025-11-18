@@ -22,6 +22,8 @@ ADMIN_EMAILS=your.email@example.com
 NEXT_PUBLIC_ADMIN_EMAIL=your.email@example.com
 ```
 
+The admin pages also expect a PostgreSQL connection for Prisma migrations. Set `DATABASE_URL` (and optionally `DIRECT_URL`) to point at your Supabase database before running migrations so the Skill table is created.
+
 ## 2. Supabase User Setup
 
 Create (or confirm) a Supabase user account that matches one of the emails listed in `ADMIN_EMAILS`. Disable public sign-ups inside Supabase Authentication settings so only the seeded admin user can log in.
@@ -38,5 +40,12 @@ If you've followed all the steps and still can't log in, double-check the follow
 -   **Allowed email:** Confirm the Supabase account you are using appears in `ADMIN_EMAILS` exactly (comparison is case-insensitive).
 -   **Row Level Security:** Ensure the `profiles` table allows the anon key to read the `email` field when doing username lookups. Alternatively, sign in with the email address directly.
 -   **Cookies cleared:** The browser stores a secure admin cookie for server-side validation. If you change credentials, sign out completely or clear cookies before testing again.
+
+## 4. Managing skills
+
+-   Run the latest migrations to add the `Skill` table (`pnpm prisma migrate deploy` in production, or `pnpm prisma migrate dev` locally).
+-   After signing in to the admin dashboard, open **Skills** in the sidebar to create, edit, or remove skills.
+-   Each skill supports a name, optional icon/emoji, category label, and a level (1–5). Slugs are generated from the name but can be overridden in the dialog if you need a custom anchor.
+-   Saved skills are reused by both the homepage marquee and the Skills & Experience page; updates appear as soon as the API cache refreshes.
 
 By following this guide, you should be able to resolve any login issues with the admin section.

@@ -4,9 +4,13 @@ import PageHero from "@/components/sections/page-hero"
 import { Button } from "@/components/ui/button"
 
 interface Skill {
+  id: number
   name: string
   slug: string
-  frequency: number
+  description?: string | null
+  icon?: string | null
+  level: number
+  category?: string | null
 }
 
 interface Experience {
@@ -89,12 +93,25 @@ export default async function SkillsExperiencePage() {
                   id={`skill-${skill.slug}`}
                   className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm"
                 >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">{skill.name}</h3>
-                    <span className="text-sm text-white/60">{skill.frequency}+ mentions</span>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl">
+                        {skill.icon || "★"}
+                      </span>
+                      <div>
+                        <h3 className="text-lg font-semibold">{skill.name}</h3>
+                        <p className="text-xs uppercase tracking-[0.15em] text-white/60">
+                          {skill.category || "General"}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/80">
+                      Level {skill.level}
+                    </span>
                   </div>
-                  <p className="mt-2 text-sm text-white/70">
-                    Applied across campaigns, launches, and growth experiments.
+                  <p className="mt-3 text-sm text-white/70">
+                    {skill.description ||
+                      "Applied across campaigns, launches, and growth experiments."}
                   </p>
                 </div>
               ))}

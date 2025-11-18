@@ -179,6 +179,15 @@ const EMPTY_STATS: DashboardStat[] = [
     actionLabel: "Create tool",
   },
   {
+    key: "skills",
+    title: "Skills",
+    href: "/admin/skills",
+    count: 0,
+    description: "0 skills published to your toolkit.",
+    emptyDescription: "Highlight your strengths to visitors and clients.",
+    actionLabel: "Create skill",
+  },
+  {
     key: "experiences",
     title: "Experiences",
     href: "/admin/experiences",
@@ -204,13 +213,15 @@ async function getDashboardStats(): Promise<DashboardStat[]> {
   }
 
   try {
-    const [posts, apps, tools, experiences, workSamples] = await Promise.all([
-      prisma.post.count(),
-      prisma.webApp.count(),
-      prisma.tool.count(),
-      prisma.experience.count(),
-      prisma.workSample.count(),
-    ])
+    const [posts, apps, tools, skills, experiences, workSamples] =
+      await Promise.all([
+        prisma.post.count(),
+        prisma.webApp.count(),
+        prisma.tool.count(),
+        prisma.skill.count(),
+        prisma.experience.count(),
+        prisma.workSample.count(),
+      ])
 
     return [
       {
@@ -239,6 +250,15 @@ async function getDashboardStats(): Promise<DashboardStat[]> {
         description: `${tools} tool${tools === 1 ? "" : "s"} documented in your stack.`,
         emptyDescription: "Document the tools you rely on to build trust.",
         actionLabel: "Create tool",
+      },
+      {
+        key: "skills",
+        title: "Skills",
+        href: "/admin/skills",
+        count: skills,
+        description: `${skills} skill${skills === 1 ? "" : "s"} published to your toolkit.`,
+        emptyDescription: "Highlight your strengths to visitors and clients.",
+        actionLabel: "Create skill",
       },
       {
         key: "experiences",
