@@ -37,7 +37,10 @@ export default function ExperiencePreview() {
           throw new Error(`Failed to load experiences: ${response.statusText}`)
         }
 
-        const data: ExperienceSummary[] = await response.json()
+        const data: ExperienceSummary[] | null = await response.json()
+        if (!data || !Array.isArray(data)) {
+          throw new Error("Experience data was not available")
+        }
         if (isMounted) {
           setExperiences(data)
         }
@@ -46,7 +49,7 @@ export default function ExperiencePreview() {
           return
         }
         console.error("Unable to load experience summary", err)
-        setError("Unable to load experience highlights right now.")
+        setError("Unable to load experience data at this time.")
       } finally {
         if (isMounted) {
           setIsLoading(false)
@@ -65,7 +68,7 @@ export default function ExperiencePreview() {
   const displayedExperiences = experiences.slice(0, 3)
 
   return (
-    <section id="experience" className="py-16 px-4">
+    <section id="experience" className="py-20 px-4">
       <div className="mx-auto max-w-6xl space-y-8">
         <div className="flex flex-col gap-3 text-white md:flex-row md:items-end md:justify-between">
           <div>

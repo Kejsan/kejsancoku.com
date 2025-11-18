@@ -18,11 +18,11 @@ const NAV_ITEMS: NavItem[] = [
 export default function Navbar() {
   return (
     <nav className="fixed top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur">
-      <div className="container flex h-16 items-center justify-between px-4 sm:px-6">
+      <div className="container flex h-16 items-center justify-between gap-6 px-4 sm:px-6">
         <Link href="/" className="text-lg font-semibold tracking-tight">
           Kejsan
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-8">
           {NAV_ITEMS.map(({ name, href, icon: Icon }) => (
             <Link
               key={href}

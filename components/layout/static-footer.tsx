@@ -41,6 +41,8 @@ const FOCUS_AREAS = [
 ]
 
 export default function StaticFooter() {
+  const currentYear = new Date().getFullYear()
+
   return (
     <footer className="border-t border-white/10 bg-slate-900/50 text-white">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -118,7 +120,9 @@ export default function StaticFooter() {
         </div>
 
         <div className="mt-12 border-t border-white/10 pt-8 text-center text-sm text-slate-400">
-          <p>{STATIC_SITE_SETTINGS.copyright}</p>
+          <p>
+            © {currentYear} {STATIC_SITE_SETTINGS.brandName}. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
