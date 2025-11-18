@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ChevronUp } from "lucide-react"
 import { NAV_LINKS } from "@/lib/navigation-links"
@@ -8,16 +8,14 @@ import { STATIC_SITE_SETTINGS } from "@/lib/static-site-settings"
 
 import HeroSection from "@/components/sections/hero-section"
 import AboutSection from "@/components/sections/about-section"
-import SkillsSection from "@/components/sections/skills-section"
-import ExperienceSection from "@/components/sections/experience-section"
+import ExperiencePreview from "@/components/sections/experience-preview"
+import InfiniteSkillsMarquee from "@/components/sections/infinite-skills-marquee"
 import BlogSection from "@/components/sections/blog-section"
 import NewsletterSection from "@/components/sections/newsletter-section"
 import ContactSection from "@/components/sections/contact-section"
+import WorkSamplesPreview from "@/components/sections/work-samples-preview"
 
 export default function Portfolio() {
-  const skillsRef = useRef<HTMLDivElement>(null)
-  const experienceRef = useRef<HTMLDivElement>(null)
-  const blogRef = useRef<HTMLDivElement>(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
 
   useEffect(() => {
@@ -77,52 +75,6 @@ export default function Portfolio() {
           delay: anime.stagger(200),
         })
 
-        // Section animations on scroll
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                if (entry.target.classList.contains("skills-section")) {
-                  anime({
-                    targets: ".skill-card",
-                    scale: [0.8, 1],
-                    opacity: [0, 1],
-                    duration: 600,
-                    delay: anime.stagger(100),
-                    easing: "easeOutBack",
-                  })
-                }
-                if (entry.target.classList.contains("experience-section")) {
-                  anime({
-                    targets: ".experience-card",
-                    translateX: [-50, 0],
-                    opacity: [0, 1],
-                    duration: 800,
-                    delay: anime.stagger(150),
-                    easing: "easeOutExpo",
-                  })
-                }
-                if (entry.target.classList.contains("blog-section")) {
-                  anime({
-                    targets: ".blog-card",
-                    translateY: [50, 0],
-                    opacity: [0, 1],
-                    duration: 800,
-                    delay: anime.stagger(150),
-                    easing: "easeOutExpo",
-                  })
-                }
-              }
-            })
-          },
-          { threshold: 0.1 },
-        )
-
-        if (skillsRef.current) observer.observe(skillsRef.current)
-        if (experienceRef.current) observer.observe(experienceRef.current)
-        if (blogRef.current) observer.observe(blogRef.current)
-
-        return () => observer.disconnect()
       } catch (error) {
         console.log("Anime.js not available, using CSS animations as fallback")
         // Fallback: just show elements without animations
@@ -203,11 +155,13 @@ export default function Portfolio() {
 
       <AboutSection />
 
-      <SkillsSection ref={skillsRef} />
+      <ExperiencePreview />
 
-      <ExperienceSection ref={experienceRef} />
+      <InfiniteSkillsMarquee />
 
-      <BlogSection ref={blogRef} />
+      <WorkSamplesPreview />
+
+      <BlogSection />
 
       <NewsletterSection />
 

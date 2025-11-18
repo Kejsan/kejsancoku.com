@@ -131,3 +131,22 @@ html {
 body {
   overflow-x: hidden;
 }
+
+@keyframes skills-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.skills-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: skills-marquee 28s linear infinite;
+}
+
+.skills-marquee-track.paused {
+  animation-play-state: paused;
+}
