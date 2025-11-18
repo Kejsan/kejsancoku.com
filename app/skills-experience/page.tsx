@@ -1,7 +1,14 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 
+import ExperienceDetail from "@/components/skills-experience/experience-detail"
+import SidebarNavigation from "@/components/skills-experience/sidebar-navigation"
+import SkillsGrid from "@/components/skills-experience/skills-grid"
+import PageLayout from "@/components/layout/page-layout"
 import PageHero from "@/components/sections/page-hero"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 interface Skill {
   id: number
@@ -24,31 +31,68 @@ interface Experience {
   skills?: string[]
 }
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? ""
+
+export const metadata: Metadata = {
+  title: "Skills & Experience | Kejsan Coku",
+  description:
+    "Explore the marketing skills and hands-on experience that fuel content, growth, and community results across channels.",
+  openGraph: {
+    title: "Skills & Experience | Kejsan Coku",
+    description:
+      "Explore the marketing skills and hands-on experience that fuel content, growth, and community results across channels.",
+    url: `${SITE_URL}/skills-experience`,
+  },
+}
+
 async function loadSkills(): Promise<Skill[]> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/api/skills`, {
+  const response = await fetch(`${SITE_URL}/api/skills`, {
     cache: "no-store",
   })
+
   if (!response.ok) {
     return []
   }
+
   return response.json()
 }
 
 async function loadExperiences(): Promise<Experience[]> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/api/experiences`, {
+  const response = await fetch(`${SITE_URL}/api/experiences`, {
     cache: "no-store",
   })
+
   if (!response.ok) {
     return []
   }
+
   return response.json()
+}
+
+function getExperienceSortValue(period?: string | null) {
+  if (!period) return 0
+  const match = period.match(/\d{4}/)
+  return match ? Number.parseInt(match[0], 10) : 0
 }
 
 export default async function SkillsExperiencePage() {
   const [skills, experiences] = await Promise.all([loadSkills(), loadExperiences()])
+  const sortedExperiences = [...experiences].sort(
+    (a, b) => getExperienceSortValue(b.period) - getExperienceSortValue(a.period),
+  )
+
+  const navItems = [
+    { id: "skill-list", label: "Skills", href: "#skill-list" },
+    { id: "experience", label: "Experience", href: "#experience" },
+    ...sortedExperiences.map((experience) => ({
+      id: `experience-${experience.id}`,
+      href: `#experience-${experience.id}`,
+      label: experience.title || experience.company,
+    })),
+  ]
 
   return (
-    <main className="bg-gradient-to-b from-slate-950 via-[#040720] to-slate-950 text-white">
+    <PageLayout className="bg-gradient-to-b from-slate-950 via-[#0b1235] to-slate-950 text-white">
       <PageHero
         title="Skills & Experience"
         description="Browse the expertise I bring to every engagement and the roles where those skills have driven measurable growth."
@@ -64,129 +108,77 @@ export default async function SkillsExperiencePage() {
             </Button>
           </div>
         }
-      />
-
-      <section id="skill-list" className="px-4 pb-16">
-        <div className="mx-auto max-w-6xl space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-white/60">Skills</p>
-              <h2 className="text-3xl font-semibold">Toolkit</h2>
-              <p className="text-white/70">What I use to build momentum across channels.</p>
-            </div>
-            <Link
-              href="#experience"
-              className="text-sm font-medium text-[#fb6163] underline-offset-4 hover:underline"
+      >
+        <div className="grid w-full gap-4 md:grid-cols-3">
+          {["Content & Social", "Community", "Growth Experiments"].map((focus) => (
+            <Badge
+              key={focus}
+              variant="outline"
+              className="justify-center rounded-full border-white/15 bg-white/5 px-4 py-2 text-sm text-white"
             >
-              Skip to experience
-            </Link>
-          </div>
-          {skills.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70">
-              Skills data is loading. Please refresh if it does not appear.
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-3">
-              {skills.map((skill) => (
-                <div
-                  key={skill.slug}
-                  id={`skill-${skill.slug}`}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl">
-                        {skill.icon || "★"}
-                      </span>
-                      <div>
-                        <h3 className="text-lg font-semibold">{skill.name}</h3>
-                        <p className="text-xs uppercase tracking-[0.15em] text-white/60">
-                          {skill.category || "General"}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/80">
-                      Level {skill.level}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm text-white/70">
-                    {skill.description ||
-                      "Applied across campaigns, launches, and growth experiments."}
+              {focus}
+            </Badge>
+          ))}
+        </div>
+      </PageHero>
+
+      <div className="px-4 pb-20">
+        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr,280px]">
+          <div className="space-y-16">
+            <section id="skill-list" className="space-y-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-white/60">Skills</p>
+                  <h2 className="text-3xl font-semibold">Toolkit & approaches</h2>
+                  <p className="text-white/70">
+                    Filter and sort the methods, platforms, and playbooks I lean on most.
                   </p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+                <div className="flex flex-wrap gap-2 text-sm text-white/70">
+                  <Badge className="bg-white/10 text-white">Icons indicate go-to tools</Badge>
+                  <Badge variant="outline" className="border-white/10 text-white/80">
+                    Level ranks hands-on depth
+                  </Badge>
+                </div>
+              </div>
 
-      <section id="experience" className="px-4 pb-20">
-        <div className="mx-auto max-w-6xl space-y-6">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-white/60">Experience</p>
-              <h2 className="text-3xl font-semibold">Where the skills were honed</h2>
-              <p className="text-white/70">
-                Selected roles that show how strategy, content, and growth experiments come together.
-              </p>
-            </div>
-            <Button asChild variant="outline" className="border-white/20 text-white hover:bg-white/10">
-              <Link href="/#contact">Discuss a project</Link>
-            </Button>
+              <SkillsGrid skills={skills} />
+            </section>
+
+            <section id="experience" className="space-y-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-white/60">Experience</p>
+                  <h2 className="text-3xl font-semibold">Where the skills were honed</h2>
+                  <p className="text-white/70">
+                    Chronological highlights with the achievements and skills each role strengthened.
+                  </p>
+                </div>
+                <Button asChild variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                  <Link href="/#contact">Discuss a project</Link>
+                </Button>
+              </div>
+
+              <div
+                className={cn(
+                  "space-y-4",
+                  sortedExperiences.length === 0 && "rounded-2xl border border-white/10 bg-white/5 p-6",
+                )}
+              >
+                {sortedExperiences.length === 0 ? (
+                  <div className="text-white/70">No experiences found yet. Please check back soon.</div>
+                ) : (
+                  sortedExperiences.map((experience) => (
+                    <ExperienceDetail key={experience.id} experience={experience} />
+                  ))
+                )}
+              </div>
+            </section>
           </div>
 
-          {experiences.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70">
-              No experiences found yet. Please check back soon.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {experiences.map((experience) => (
-                <div
-                  key={experience.id}
-                  id={`experience-${experience.id}`}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm"
-                >
-                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <h3 className="text-2xl font-semibold text-white">{experience.title || experience.company}</h3>
-                      <p className="text-[#54a09b] text-lg">{experience.company}</p>
-                    </div>
-                    <div className="text-sm text-white/60">
-                      {[experience.period, experience.location].filter(Boolean).join(" • ")}
-                    </div>
-                  </div>
-                  {experience.description ? (
-                    <p className="mt-3 text-white/70">{experience.description}</p>
-                  ) : null}
-                  {experience.achievements?.length ? (
-                    <ul className="mt-4 space-y-2 text-white/80">
-                      {experience.achievements.slice(0, 3).map((achievement, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm">
-                          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#fb6163]" />
-                          <span>{achievement}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {experience.skills?.length ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {experience.skills.map((skill, index) => (
-                        <span
-                          key={index}
-                          className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/80"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          )}
+          <SidebarNavigation items={navItems} />
         </div>
-      </section>
-    </main>
+      </div>
+    </PageLayout>
   )
 }
