@@ -37,7 +37,7 @@ export default function SidebarNavigation({ items }: SidebarNavigationProps) {
 
     const elements = sanitizedItems
       .map((item) => document.getElementById(item.id))
-      .filter((el): el is Element => Boolean(el))
+      .filter((el): el is HTMLElement => el !== null)
 
     elements.forEach((el) => observer.observe(el))
 
