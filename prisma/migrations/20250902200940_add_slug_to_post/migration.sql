@@ -8,7 +8,7 @@
 PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;
 CREATE TABLE "new_Post" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL PRIMARY KEY,
     "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "content" TEXT,

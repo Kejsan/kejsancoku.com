@@ -3,7 +3,7 @@ DROP TABLE IF EXISTS "Footer";
 
 -- Create new SiteSettings table
 CREATE TABLE "SiteSettings" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL PRIMARY KEY,
     "copyright" TEXT,
     "linkedin" TEXT,
     "github" TEXT,

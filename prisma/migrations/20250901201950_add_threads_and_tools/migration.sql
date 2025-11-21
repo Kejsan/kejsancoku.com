@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "Post" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL PRIMARY KEY,
     "title" TEXT NOT NULL,
     "content" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -9,7 +9,7 @@ CREATE TABLE "Post" (
 
 -- CreateTable
 CREATE TABLE "Experience" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL PRIMARY KEY,
     "company" TEXT NOT NULL,
     "role" TEXT NOT NULL,
     "startDate" DATETIME NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE "Experience" (
 
 -- CreateTable
 CREATE TABLE "WorkSample" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL PRIMARY KEY,
     "title" TEXT NOT NULL,
     "url" TEXT,
     "description" TEXT,
@@ -31,7 +31,7 @@ CREATE TABLE "WorkSample" (
 
 -- CreateTable
 CREATE TABLE "WebApp" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL PRIMARY KEY,
     "name" TEXT NOT NULL,
     "url" TEXT,
     "description" TEXT,
@@ -41,7 +41,7 @@ CREATE TABLE "WebApp" (
 
 -- CreateTable
 CREATE TABLE "Tool" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL PRIMARY KEY,
     "name" TEXT NOT NULL,
     "url" TEXT NOT NULL,
     "description" TEXT,
@@ -53,7 +53,7 @@ CREATE TABLE "Tool" (
 PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;
 CREATE TABLE "new_SiteSettings" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL PRIMARY KEY,
     "copyright" TEXT,
     "linkedin" TEXT,
     "github" TEXT,

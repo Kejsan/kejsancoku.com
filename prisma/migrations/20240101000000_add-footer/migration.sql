@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "Footer" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "id" SERIAL PRIMARY KEY,
     "copyright" TEXT,
     "linkedin" TEXT,
     "github" TEXT,
