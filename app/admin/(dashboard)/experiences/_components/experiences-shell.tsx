@@ -168,6 +168,15 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
       }
 
       const now = new Date()
+      let rolesValue: unknown = null
+      if (parsed.data.roles?.trim()) {
+        try {
+          rolesValue = JSON.parse(parsed.data.roles)
+        } catch {
+          rolesValue = parsed.data.roles
+        }
+      }
+
       const placeholder: ExperienceRow = {
         id: -Math.floor(Math.random() * 1_000_000),
         company: parsed.data.company.trim(),
@@ -189,6 +198,8 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
         skills,
         careerProgression: careerProgression.data,
         previousRole: previousRole.data,
+        roles: rolesValue,
+        published: true,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
       }
