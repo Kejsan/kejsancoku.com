@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { AlertCircle } from "lucide-react"
 
 type CSVRow = {
   title: string
@@ -312,4 +311,3 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
     </Dialog>
   )
 }
-
