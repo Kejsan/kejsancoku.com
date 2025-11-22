@@ -119,6 +119,9 @@ export function AppsShell({ initialApps }: AppsShellProps) {
         name: parsed.data.name,
         url: parsed.data.url && parsed.data.url.length > 0 ? parsed.data.url : null,
         description: parsed.data.description?.length ? parsed.data.description : null,
+        image: parsed.data.image && parsed.data.image.length > 0 ? parsed.data.image : null,
+        blogPostSlug: parsed.data.blogPostSlug ?? null,
+        published: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
