@@ -31,8 +31,8 @@ export function ToolCard({
   return (
     <div
       className={cn(
-        "group relative flex h-full flex-col justify-between rounded-2xl border border-white/10 bg-slate-900/60 p-6 text-white shadow-xl transition hover:-translate-y-1 hover:border-[#54a09b]/60 hover:shadow-2xl",
-        "before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-white/10 before:opacity-0 before:transition before:duration-300 before:ease-out",
+        "group relative flex h-full flex-col justify-between rounded-2xl border border-white/20 bg-white/5 backdrop-blur p-6 text-white shadow-xl transition hover:-translate-y-1 hover:border-[#fb6163]/50 hover:bg-white/10 hover:shadow-2xl",
+        "before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-white/20 before:opacity-0 before:transition before:duration-300 before:ease-out",
         "hover:before:opacity-100",
         className,
       )}
@@ -51,7 +51,7 @@ export function ToolCard({
           <div className="flex flex-col">
             <Link
               href={tool.url}
-              className="inline-flex items-center gap-2 font-semibold text-[#54a09b] transition hover:text-[#54a09b]/90"
+              className="inline-flex items-center gap-2 font-semibold text-[#fb6163] transition hover:text-[#fb6163]/80"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -80,7 +80,7 @@ export function ToolCardSkeleton({ className }: ToolCardSkeletonProps) {
   return (
     <div
       className={cn(
-        "flex h-full flex-col justify-between rounded-2xl border border-white/10 bg-slate-900/40 p-6 shadow-xl",
+        "flex h-full flex-col justify-between rounded-2xl border border-white/20 bg-white/5 backdrop-blur p-6 shadow-xl",
         "animate-pulse",
         className,
       )}

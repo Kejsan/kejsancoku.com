@@ -35,37 +35,39 @@ export default function BlogPage() {
         actions={
           <div className="flex w-full justify-center">
             <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60" />
               <input
                 type="text"
                 placeholder="Search articles..."
-                className="w-full rounded-xl border border-border bg-background/80 px-10 py-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 text-sm text-white placeholder:text-white/60 transition-colors focus:border-[#fb6163] focus:outline-none"
               />
             </div>
           </div>
         }
       />
 
-      <section className="px-4">
+      <section className="px-4 py-12">
         <div className="mx-auto max-w-4xl">
-          <NewsletterSignup
-            title="Never Miss an SEO Insight"
-            description="Get my latest strategies, case studies, and actionable tips delivered to your inbox. Join the 3200+ marketers who trust my insights to grow their digital presence."
-          />
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur">
+            <NewsletterSignup
+              title="Never Miss an SEO Insight"
+              description="Get my latest strategies, case studies, and actionable tips delivered to your inbox. Join the 3200+ marketers who trust my insights to grow their digital presence."
+            />
+          </div>
         </div>
       </section>
 
       <section className="px-4 pb-20 pt-16">
         <div className="mx-auto max-w-6xl">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground">All Articles</h2>
+          <h2 className="text-3xl font-semibold tracking-tight text-white">All Articles</h2>
           <div className="mt-10">
             {loading ? (
-              <p className="text-sm text-muted-foreground">Loading posts...</p>
+              <p className="text-sm text-white/60">Loading posts...</p>
             ) : (
               <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                 {posts.map((post) => (
                   <Link key={post.slug} href={`/blog/${post.slug}`}>
-                    <Card className="group flex h-full flex-col overflow-hidden border border-border/70 bg-card/90 shadow-sm transition-colors hover:border-primary/50">
+                    <Card className="group flex h-full flex-col overflow-hidden border border-white/20 bg-white/5 backdrop-blur shadow-sm transition-colors hover:border-[#fb6163]/50 hover:bg-white/10">
                       <div className="aspect-video overflow-hidden">
                         <Image
                           src={post.featuredBanner || "/placeholder.svg"}
@@ -76,16 +78,16 @@ export default function BlogPage() {
                         />
                       </div>
                       <CardContent className="flex flex-1 flex-col p-6">
-                        <h3 className="line-clamp-2 text-lg font-semibold text-foreground transition-colors group-hover:text-primary">
+                        <h3 className="line-clamp-2 text-lg font-semibold text-white transition-colors group-hover:text-[#fb6163]">
                           {post.title}
                         </h3>
-                        <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{post.metaDescription}</p>
-                        <div className="mt-auto flex items-center justify-between pt-6 text-xs text-muted-foreground">
+                        <p className="mt-3 line-clamp-3 text-sm text-white/70">{post.metaDescription}</p>
+                        <div className="mt-auto flex items-center justify-between pt-6 text-xs text-white/60">
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString()}
                           </div>
-                          <span className="font-medium text-primary transition-colors group-hover:text-primary/80">Read →</span>
+                          <span className="font-medium text-[#fb6163] transition-colors group-hover:text-[#fb6163]/80">Read →</span>
                         </div>
                       </CardContent>
                     </Card>

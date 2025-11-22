@@ -57,7 +57,7 @@ export default function ExperienceDetail({ experience }: ExperienceDetailProps) 
             <ul className="space-y-2 text-sm text-white/85">
               {experience.achievements.map((achievement, index) => (
                 <li key={index} className="flex items-start gap-2 rounded-xl bg-white/5 px-3 py-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-[#54a09b]" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-[#fb6163]" />
                   <span>{achievement}</span>
                 </li>
               ))}

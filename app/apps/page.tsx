@@ -43,27 +43,27 @@ export default function AppsPage() {
             ? [...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="flex flex-col justify-between rounded-2xl border border-border/60 bg-muted/40 p-6 shadow-sm animate-pulse"
+                  className="flex flex-col justify-between rounded-2xl border border-white/20 bg-white/5 p-6 shadow-sm animate-pulse backdrop-blur"
                 >
-                  <div className="mb-4 h-8 w-3/4 rounded bg-muted-foreground/20" />
-                  <div className="mb-2 h-4 w-full rounded bg-muted-foreground/20" />
-                  <div className="h-4 w-5/6 rounded bg-muted-foreground/20" />
+                  <div className="mb-4 h-8 w-3/4 rounded bg-white/20" />
+                  <div className="mb-2 h-4 w-full rounded bg-white/20" />
+                  <div className="h-4 w-5/6 rounded bg-white/20" />
                 </div>
               ))
             : apps.map((app) => (
                 <article
                   key={app.id}
-                  className="flex flex-col justify-between rounded-2xl border border-border bg-card/80 p-6 shadow-sm transition-colors hover:border-primary/40"
+                  className="flex flex-col justify-between rounded-2xl border border-white/20 bg-white/5 backdrop-blur p-6 shadow-sm transition-colors hover:border-[#fb6163]/50 hover:bg-white/10"
                 >
                   <div className="space-y-3">
-                    <h2 className="text-xl font-semibold text-foreground">{app.name}</h2>
-                    <p className="text-sm text-muted-foreground">{app.description}</p>
+                    <h2 className="text-xl font-semibold text-white">{app.name}</h2>
+                    <p className="text-sm text-white/70">{app.description}</p>
                   </div>
                   <a
                     href={app.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                    className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-[#fb6163] transition-colors hover:text-[#fb6163]/80"
                   >
                     View App
                     <ArrowRight className="h-4 w-4" />

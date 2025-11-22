@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { STATIC_SITE_SETTINGS } from "@/lib/static-site-settings"
+import UnifiedNavbar from "@/components/layout/unified-navbar"
 
 export const metadata: Metadata = {
   title: "Contact | Kejsan",
@@ -24,7 +25,8 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-[#000080] to-slate-900 text-white">
-      <div className="max-w-4xl mx-auto px-4 py-24">
+      <UnifiedNavbar />
+      <div className="max-w-4xl mx-auto px-4 py-24 pt-32">
         <div className="mb-12 text-center">
           <h1 className="text-4xl font-bold mb-4">Let&apos;s Connect</h1>
           <p className="text-white/80 text-lg">

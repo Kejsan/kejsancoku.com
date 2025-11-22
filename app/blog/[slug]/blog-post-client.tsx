@@ -120,10 +120,10 @@ export default function BlogPostClient({ post }: { post: Post | null }) {
         key="post-jsonld"
       />
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
+      <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/20 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <Link href="/" className="text-white font-bold text-xl">
+            <Link href="/" className="text-white font-bold text-xl hover:text-[#fb6163] transition-colors">
               Kejsan
             </Link>
             <div className="flex items-center gap-4">
@@ -145,9 +145,9 @@ export default function BlogPostClient({ post }: { post: Post | null }) {
         </div>
       </nav>
 
-      <div className="pt-20">
+      <div>
         {/* Header */}
-        <section className="py-12 px-4">
+        <section className="py-16 px-4">
           <div className="max-w-4xl mx-auto blog-post-header">
             <div className="mb-6">
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">{post.title}</h1>

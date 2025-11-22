@@ -92,7 +92,7 @@ export default async function SkillsExperiencePage() {
   ]
 
   return (
-    <PageLayout className="bg-gradient-to-b from-slate-950 via-[#0b1235] to-slate-950 text-white">
+    <PageLayout>
       <PageHero
         title="Skills & Experience"
         description="Browse the expertise I bring to every engagement and the roles where those skills have driven measurable growth."
@@ -103,7 +103,7 @@ export default async function SkillsExperiencePage() {
             <Button asChild className="bg-[#fb6163] hover:bg-[#fb6163]/90">
               <Link href="#experience">View experience highlights</Link>
             </Button>
-            <Button asChild variant="outline" className="border-white/20 text-white hover:bg-white/10">
+            <Button asChild variant="outline" className="border-white/30 text-white hover:bg-white/10 bg-transparent">
               <Link href="#skill-list">Jump to skills</Link>
             </Button>
           </div>
@@ -154,7 +154,7 @@ export default async function SkillsExperiencePage() {
                     Chronological highlights with the achievements and skills each role strengthened.
                   </p>
                 </div>
-                <Button asChild variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                <Button asChild variant="outline" className="border-white/30 text-white hover:bg-white/10 bg-transparent">
                   <Link href="/#contact">Discuss a project</Link>
                 </Button>
               </div>
@@ -162,7 +162,7 @@ export default async function SkillsExperiencePage() {
               <div
                 className={cn(
                   "space-y-4",
-                  sortedExperiences.length === 0 && "rounded-2xl border border-white/10 bg-white/5 p-6",
+                  sortedExperiences.length === 0 && "rounded-2xl border border-white/20 bg-white/5 backdrop-blur p-6",
                 )}
               >
                 {sortedExperiences.length === 0 ? (

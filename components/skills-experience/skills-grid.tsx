@@ -159,9 +159,9 @@ export default function SkillsGrid({ skills }: SkillsGridProps) {
                   {skill.description || "Applied across campaigns, launches, and growth experiments."}
                 </p>
 
-                <div className="h-2 rounded-full bg-white/5">
+                <div className="h-2 rounded-full bg-white/10">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#54a09b] to-[#fb6163]"
+                    className="h-full rounded-full bg-gradient-to-r from-[#fb6163] to-[#000080]"
                     style={{ width: `${Math.min(skill.level * 10, 100)}%` }}
                   />
                 </div>

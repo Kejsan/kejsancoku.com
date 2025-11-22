@@ -163,9 +163,9 @@ export default function WorkSamples() {
             { label: "Platforms Managed", value: "6" },
             { label: "Companies", value: "4" },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-border bg-muted/40 p-4 shadow-sm">
-              <div className="text-2xl font-semibold text-primary">{stat.value}</div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
+            <div key={stat.label} className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur p-4 shadow-sm">
+              <div className="text-2xl font-semibold text-[#fb6163]">{stat.value}</div>
+              <div className="text-sm text-white/70">{stat.label}</div>
             </div>
           ))}
         </div>
@@ -178,11 +178,11 @@ export default function WorkSamples() {
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
             </div>
           ) : samplesError ? (
-            <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive-foreground">
+            <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-6 text-center text-red-400">
               {samplesError}
             </div>
           ) : workSamples.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-muted/40 p-6 text-center text-muted-foreground">
+            <div className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur p-6 text-center text-white/70">
               No work samples available at the moment. Please check back later.
             </div>
           ) : (
@@ -198,26 +198,26 @@ export default function WorkSamples() {
               return (
                 <Card
                   key={sample.id}
-                  className="work-category border border-border/70 bg-card/90 shadow-sm transition-colors hover:border-primary/50"
+                  className="work-category border border-white/20 bg-white/5 backdrop-blur shadow-sm transition-colors hover:border-[#fb6163]/50 hover:bg-white/10"
                 >
                   <CardContent className="space-y-8 p-8">
                     <div className="flex flex-col gap-6 md:flex-row md:items-start">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-border/60 bg-muted/40">
-                        {IconComponent ? <IconComponent className="h-8 w-8 text-primary" /> : <Globe className="h-8 w-8 text-primary" />}
+                      <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-white/20 bg-white/10">
+                        {IconComponent ? <IconComponent className="h-8 w-8 text-[#fb6163]" /> : <Globe className="h-8 w-8 text-[#fb6163]" />}
                       </div>
                       <div className="flex-1 space-y-4">
                         <div className="space-y-2">
-                          <h2 className="text-3xl font-semibold text-foreground">{sample.title}</h2>
+                          <h2 className="text-3xl font-semibold text-white">{sample.title}</h2>
                           {sample.description ? (
-                            <p className="text-lg text-muted-foreground">{sample.description}</p>
+                            <p className="text-lg text-white/80">{sample.description}</p>
                           ) : null}
                         </div>
                         {!!sample.stats?.length && (
                           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                             {sample.stats?.map((stat, i) => (
-                              <div key={i} className="rounded-xl border border-border/60 bg-muted/40 p-4 text-left">
-                                <div className="text-sm font-medium text-muted-foreground">{stat.label}</div>
-                                <div className="text-lg font-semibold text-foreground">{stat.value}</div>
+                              <div key={i} className="rounded-xl border border-white/20 bg-white/5 backdrop-blur p-4 text-left">
+                                <div className="text-sm font-medium text-white/70">{stat.label}</div>
+                                <div className="text-lg font-semibold text-white">{stat.value}</div>
                               </div>
                             ))}
                           </div>
@@ -232,7 +232,7 @@ export default function WorkSamples() {
                           href={sample.mainContent.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:border-primary/50 hover:bg-primary/90"
+                          className="inline-flex items-center gap-2 rounded-xl border border-[#fb6163]/40 bg-[#fb6163] px-6 py-3 text-sm font-medium text-white transition-colors hover:border-[#fb6163]/50 hover:bg-[#fb6163]/90"
                         >
                           <Globe className="h-5 w-5" />
                           {sample.mainContent.title ?? sample.mainContent.url}
@@ -247,7 +247,7 @@ export default function WorkSamples() {
                           href={sample.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:border-primary/50 hover:bg-primary/90"
+                          className="inline-flex items-center gap-2 rounded-xl border border-[#fb6163]/40 bg-[#fb6163] px-6 py-3 text-sm font-medium text-white transition-colors hover:border-[#fb6163]/50 hover:bg-[#fb6163]/90"
                         >
                           <Globe className="h-5 w-5" />
                           Visit Project
@@ -263,28 +263,28 @@ export default function WorkSamples() {
                         </h3>
                         <div className="grid gap-4 md:grid-cols-2">
                           {sample.socialChannels?.map((channel, i) => (
-                            <div key={i} className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                            <div key={i} className="rounded-xl border border-white/20 bg-white/5 backdrop-blur p-4">
                               <div className="mb-2 flex items-center justify-between">
-                                <h4 className="text-sm font-semibold text-foreground">
+                                <h4 className="text-sm font-semibold text-white">
                                   {channel.platform ?? channel.title}
                                 </h4>
                                 <a
                                   href={channel.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                                  className="text-sm font-medium text-[#fb6163] transition-colors hover:text-[#fb6163]/80"
                                 >
                                   <ExternalLink className="h-4 w-4" />
                                 </a>
                               </div>
                               {channel.description ? (
-                                <p className="mb-3 text-sm text-muted-foreground">{channel.description}</p>
+                                <p className="mb-3 text-sm text-white/70">{channel.description}</p>
                               ) : null}
                               <a
                                 href={channel.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="break-all text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                                className="break-all text-sm font-medium text-[#fb6163] transition-colors hover:text-[#fb6163]/80"
                               >
                                 {channel.url}
                               </a>
@@ -304,24 +304,24 @@ export default function WorkSamples() {
                               href={article.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="group flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 p-4 transition-colors hover:border-primary/40 hover:bg-muted/50"
+                              className="group flex items-center justify-between rounded-xl border border-white/20 bg-white/5 backdrop-blur p-4 transition-colors hover:border-[#fb6163]/40 hover:bg-white/10"
                             >
-                              <span className="text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                              <span className="text-sm font-medium text-white transition-colors group-hover:text-[#fb6163]">
                                 {article.title ?? article.url}
                               </span>
-                              <ExternalLink className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
+                              <ExternalLink className="h-4 w-4 text-white/60 transition-colors group-hover:text-[#fb6163]" />
                             </a>
                           ))}
                         </div>
                         {sample.writingSamplesNote ? (
-                          <p className="text-sm text-muted-foreground">{sample.writingSamplesNote}</p>
+                          <p className="text-sm text-white/70">{sample.writingSamplesNote}</p>
                         ) : null}
                       </div>
                     ) : null}
 
                     {sample.additionalNote ? (
-                      <div className="rounded-xl border border-primary/40 bg-primary/10 p-4">
-                        <p className="text-sm text-muted-foreground">{sample.additionalNote}</p>
+                      <div className="rounded-xl border border-[#fb6163]/40 bg-[#fb6163]/10 p-4">
+                        <p className="text-sm text-white/80">{sample.additionalNote}</p>
                       </div>
                     ) : null}
                   </CardContent>
@@ -339,15 +339,15 @@ export default function WorkSamples() {
           <>
             {emailHref ? (
               <a href={emailHref}>
-                <Button size="lg">Get In Touch</Button>
+                <Button size="lg" className="bg-[#fb6163] hover:bg-[#fb6163]/90 text-white">Get In Touch</Button>
               </a>
             ) : (
-              <Button size="lg" disabled>
+              <Button size="lg" disabled className="bg-[#fb6163]/50 text-white">
                 Email Unavailable
               </Button>
             )}
             <Link href="/">
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 bg-transparent">
                 View Full Portfolio
               </Button>
             </Link>
@@ -358,7 +358,7 @@ export default function WorkSamples() {
       {showScrollTop ? (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 rounded-full border border-primary/40 bg-primary p-3 text-primary-foreground shadow-lg transition-transform hover:scale-105 hover:border-primary/50 hover:bg-primary/90"
+          className="fixed bottom-6 right-6 z-50 rounded-full border border-[#fb6163]/40 bg-[#fb6163] p-3 text-white shadow-lg transition-transform hover:scale-105 hover:border-[#fb6163]/50 hover:bg-[#fb6163]/90"
           aria-label={scrollButtonLabel}
           title={scrollButtonLabel}
         >

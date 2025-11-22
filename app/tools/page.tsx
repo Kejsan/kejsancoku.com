@@ -63,7 +63,7 @@ export default async function ToolsPage() {
 
       {error ? (
         <section className="px-4 pb-8">
-          <div className="mx-auto max-w-2xl rounded-2xl border border-destructive/40 bg-destructive/10 px-6 py-4 text-center text-sm text-destructive">
+          <div className="mx-auto max-w-2xl rounded-2xl border border-red-500/40 bg-red-500/10 px-6 py-4 text-center text-sm text-red-400">
             {error}
           </div>
         </section>
@@ -77,8 +77,8 @@ export default async function ToolsPage() {
             ))}
           </div>
         ) : (
-          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-muted/40 px-8 py-16 text-center text-muted-foreground">
-            <h2 className="text-xl font-semibold text-foreground">No tools to share just yet</h2>
+          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-white/20 bg-white/5 backdrop-blur px-8 py-16 text-center text-white/70">
+            <h2 className="text-xl font-semibold text-white">No tools to share just yet</h2>
             <p className="max-w-xl text-sm">
               Check back soon for a curated list of analytics, automation, and content platforms powering my work.
             </p>
