@@ -1,7 +1,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { CalendarRange, Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { CalendarRange, Copy, Eye, EyeOff, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
 import type { SerializedExperience } from "../serializers"
 
 export type ExperienceRow = SerializedExperience
@@ -27,6 +28,7 @@ type ColumnHandlers = {
   onDuplicate: (experience: ExperienceRow) => void
   onQuickDuplicate: (experience: ExperienceRow) => void
   onDelete: (experience: ExperienceRow) => void
+  onTogglePublished: (experience: ExperienceRow) => void
 }
 
 export function createExperienceColumns({
@@ -34,6 +36,7 @@ export function createExperienceColumns({
   onDuplicate,
   onQuickDuplicate,
   onDelete,
+  onTogglePublished,
 }: ColumnHandlers): ColumnDef<ExperienceRow, unknown>[] {
   return [
     {
@@ -95,6 +98,30 @@ export function createExperienceColumns({
       ),
     },
     {
+      accessorKey: "published",
+      header: "Status",
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onTogglePublished(row.original)}
+          className="h-8 gap-2"
+        >
+          {row.original.published ? (
+            <>
+              <Eye className="h-4 w-4 text-green-600" />
+              <span className="text-xs">Visible</span>
+            </>
+          ) : (
+            <>
+              <EyeOff className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Hidden</span>
+            </>
+          )}
+        </Button>
+      ),
+    },
+    {
       id: "actions",
       cell: ({ row }) => (
         <DropdownMenu>
@@ -114,6 +141,18 @@ export function createExperienceColumns({
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onQuickDuplicate(row.original)}>
               <Copy className="mr-2 h-4 w-4" /> Quick duplicate
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onTogglePublished(row.original)}>
+              {row.original.published ? (
+                <>
+                  <EyeOff className="mr-2 h-4 w-4" /> Hide from public
+                </>
+              ) : (
+                <>
+                  <Eye className="mr-2 h-4 w-4" /> Show on public
+                </>
+              )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onDelete(row.original)} className="text-destructive focus:text-destructive">

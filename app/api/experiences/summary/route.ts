@@ -28,6 +28,7 @@ export async function GET() {
 
   try {
     const experiences = await prisma.experience.findMany({
+      where: { published: true },
       orderBy: [
         { startDate: "desc" },
         { createdAt: "desc" },

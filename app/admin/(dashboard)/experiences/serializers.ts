@@ -4,6 +4,7 @@ import {
   coerceStringArray,
   normaliseCareerProgressionValue,
   normalisePreviousRoleValue,
+  formatRolesForForm,
 } from "./parsers"
 
 export type SerializedExperience = ReturnType<typeof serializeExperience>
@@ -19,6 +20,8 @@ export function serializeExperience(experience: Experience) {
     skills: coerceStringArray(experience.skills),
     careerProgression: normaliseCareerProgressionValue(experience.careerProgression),
     previousRole: normalisePreviousRoleValue(experience.previousRole),
+    roles: experience.roles,
+    published: experience.published ?? true,
     startDate: experience.startDate.toISOString(),
     endDate: experience.endDate ? experience.endDate.toISOString() : null,
     createdAt: experience.createdAt.toISOString(),

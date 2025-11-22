@@ -41,7 +41,11 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   try {
-    const sample = await prisma.workSample.update({ where: { id }, data })
+    const updateData: any = {
+      ...data,
+      published: data.published !== undefined ? data.published : existing.published,
+    }
+    const sample = await prisma.workSample.update({ where: { id }, data: updateData })
     await recordAudit({
       actorEmail: sessionResult.session.user.email,
       entityType: 'WorkSample',

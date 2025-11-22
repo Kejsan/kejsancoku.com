@@ -49,6 +49,7 @@ export const experienceFormSchema = z.object({
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: result.message })
       }
     }),
+  roles: z.string().optional(), // JSON string for multiple roles within same company
 })
 
 export type ExperienceFormValues = z.infer<typeof experienceFormSchema>

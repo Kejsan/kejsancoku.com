@@ -10,7 +10,7 @@ import {
 } from "@/lib/supabaseClient"
 import { normalizeSkillPayload } from "./utils"
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!prisma) {
     return NextResponse.json(
       { error: "Database not configured" },
@@ -19,7 +19,12 @@ export async function GET() {
   }
 
   try {
+    // Check if this is an admin request
+    const url = new URL(request.url)
+    const includeUnpublished = url.searchParams.get("admin") === "true"
+    
     const skills = await prisma.skill.findMany({
+      where: includeUnpublished ? undefined : { published: true },
       orderBy: [
         { level: "desc" },
         { name: "asc" },

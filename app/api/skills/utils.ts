@@ -46,6 +46,8 @@ export function normalizeSkillPayload(body: unknown) {
   const parsedLevel = Number(data.level)
   const level = Number.isFinite(parsedLevel) ? Math.max(1, Math.min(5, parsedLevel)) : 3
 
+  const published = typeof data.published === "boolean" ? data.published : true
+
   return {
     ok: true as const,
     data: {
@@ -55,6 +57,7 @@ export function normalizeSkillPayload(body: unknown) {
       icon,
       level,
       category,
+      published,
     },
   }
 }

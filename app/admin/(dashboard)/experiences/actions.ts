@@ -46,6 +46,7 @@ type ExperiencePayload = {
   skills: string[]
   careerProgression: CareerProgression[] | null
   previousRole: PreviousRole | null
+  roles: any | null
 }
 
 function toNullableJsonValue(
@@ -71,12 +72,13 @@ function toNullableJsonValue(
 }
 
 function mapExperiencePayloadToPersistence(payload: ExperiencePayload) {
-  const { careerProgression, previousRole, ...rest } = payload
+  const { careerProgression, previousRole, roles, ...rest } = payload
 
   return {
     ...rest,
     careerProgression: toNullableJsonValue(careerProgression),
     previousRole: toNullableJsonValue(previousRole),
+    roles: toNullableJsonValue(roles),
   }
 }
 
@@ -114,6 +116,19 @@ function buildExperienceData(input: ExperienceFormValues): ActionResult<Experien
     return { ok: false, message: previousRoleResult.message }
   }
 
+  // Parse roles JSON if provided
+  let rolesData: any = null
+  if (input.roles?.trim()) {
+    try {
+      const parsed = JSON.parse(input.roles.trim())
+      if (Array.isArray(parsed)) {
+        rolesData = parsed
+      }
+    } catch {
+      // Invalid JSON, will be null
+    }
+  }
+
   return {
     ok: true,
     data: {
@@ -132,6 +147,7 @@ function buildExperienceData(input: ExperienceFormValues): ActionResult<Experien
       skills,
       careerProgression: careerProgressionResult.data,
       previousRole: previousRoleResult.data,
+      roles: rolesData,
     },
   }
 }
@@ -239,6 +255,45 @@ export async function updateExperience(
   } catch (error) {
     console.error("Failed to update experience", error)
     const message = error instanceof Error ? error.message : "Failed to update experience"
+    return { ok: false, message }
+  }
+}
+
+export async function toggleExperiencePublished(
+  id: number,
+): Promise<ActionResult<ReturnType<typeof serializeExperience>>> {
+  if (!prisma) {
+    return { ok: false, message: "Database is not configured." }
+  }
+
+  const session = await ensureAdminSession()
+  if (!("email" in session)) {
+    return session
+  }
+
+  try {
+    const existing = await prisma.experience.findUnique({ where: { id } })
+    if (!existing) {
+      return { ok: false, message: "Experience not found" }
+    }
+
+    const experience = await prisma.experience.update({
+      where: { id },
+      data: { published: !existing.published },
+    })
+    await recordAudit({
+      actorEmail: session.email,
+      entityType: "Experience",
+      entityId: experience.id,
+      action: "UPDATE",
+      diff: buildAuditDiff(existing, experience),
+    })
+    revalidatePath("/admin/experiences")
+
+    return { ok: true, data: serializeExperience(experience) }
+  } catch (error) {
+    console.error("Failed to toggle experience published", error)
+    const message = error instanceof Error ? error.message : "Failed to toggle experience published"
     return { ok: false, message }
   }
 }

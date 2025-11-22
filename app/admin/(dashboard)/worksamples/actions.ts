@@ -54,6 +54,7 @@ export async function createWorkSample(
     title: parsed.data.title.trim(),
     url: parsed.data.url && parsed.data.url.trim().length > 0 ? parsed.data.url.trim() : null,
     description: parsed.data.description?.trim() || null,
+    published: true,
   }
 
   try {
@@ -106,7 +107,11 @@ export async function updateWorkSample(
       return { ok: false, message: "Work sample not found" }
     }
 
-    const sample = await prisma.workSample.update({ where: { id }, data })
+    const updateData = {
+      ...data,
+      published: existing.published,
+    }
+    const sample = await prisma.workSample.update({ where: { id }, data: updateData })
     await recordAudit({
       actorEmail: session.email,
       entityType: "WorkSample",
@@ -176,6 +181,7 @@ export async function duplicateWorkSample(
         title: `${existing.title} (Copy)`.trim(),
         url: existing.url,
         description: existing.description,
+        published: existing.published ?? true,
       },
     })
 
@@ -192,6 +198,45 @@ export async function duplicateWorkSample(
   } catch (error) {
     console.error("Failed to duplicate work sample", error)
     const message = error instanceof Error ? error.message : "Failed to duplicate work sample"
+    return { ok: false, message }
+  }
+}
+
+export async function toggleWorkSamplePublished(
+  id: number,
+): Promise<ActionResult<ReturnType<typeof serializeWorkSample>>> {
+  if (!prisma) {
+    return { ok: false, message: "Database is not configured." }
+  }
+
+  const session = await ensureAdminSession()
+  if (!("email" in session)) {
+    return session
+  }
+
+  try {
+    const existing = await prisma.workSample.findUnique({ where: { id } })
+    if (!existing) {
+      return { ok: false, message: "Work sample not found" }
+    }
+
+    const sample = await prisma.workSample.update({
+      where: { id },
+      data: { published: !existing.published },
+    })
+    await recordAudit({
+      actorEmail: session.email,
+      entityType: "WorkSample",
+      entityId: sample.id,
+      action: "UPDATE",
+      diff: buildAuditDiff(existing, sample),
+    })
+    revalidatePath("/admin/worksamples")
+
+    return { ok: true, data: serializeWorkSample(sample) }
+  } catch (error) {
+    console.error("Failed to toggle work sample published", error)
+    const message = error instanceof Error ? error.message : "Failed to toggle work sample published"
     return { ok: false, message }
   }
 }

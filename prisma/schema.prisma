@@ -46,6 +46,8 @@ model Experience {
   skills           String[]  @default([])
   careerProgression Json?
   previousRole     Json?
+  roles            Json?     // Array of roles within same company
+  published        Boolean   @default(true)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
@@ -55,6 +57,7 @@ model WorkSample {
   title       String
   url         String?
   description String?
+  published   Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -64,6 +67,9 @@ model WebApp {
   name        String
   url         String?
   description String?
+  image       String?  // Image URL for showcase
+  blogPostSlug String? // Reference to blog post about this app
+  published   Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -98,6 +104,9 @@ model Tool {
   name        String
   url         String
   description String?
+  image       String?  // Image URL for showcase
+  blogPostSlug String? // Reference to blog post about this tool
+  published   Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -110,6 +119,7 @@ model Skill {
   icon        String?
   level       Int      @default(1)
   category    String?
+  published   Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

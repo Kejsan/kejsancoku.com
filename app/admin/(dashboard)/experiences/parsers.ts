@@ -192,6 +192,24 @@ export function formatMultilineForForm(value: readonly string[] | null | undefin
   return value.join("\n")
 }
 
+export function formatRolesForForm(value: unknown): string {
+  if (!value) {
+    return ""
+  }
+  if (Array.isArray(value)) {
+    return JSON.stringify(value, null, 2)
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value)
+      return JSON.stringify(parsed, null, 2)
+    } catch {
+      return value
+    }
+  }
+  return JSON.stringify(value, null, 2)
+}
+
 export function normaliseCareerProgressionValue(
   value: unknown,
 ): CareerProgression[] | null {

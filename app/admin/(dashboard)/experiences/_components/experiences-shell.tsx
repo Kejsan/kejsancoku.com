@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useTransition } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { DataTable } from "@/components/admin/ui/data-table"
@@ -21,6 +22,7 @@ import {
   createExperience,
   deleteExperience,
   duplicateExperience,
+  toggleExperiencePublished,
   updateExperience,
 } from "../actions"
 import { experienceFormSchema, type ExperienceFormValues } from "../schema"
@@ -29,6 +31,7 @@ import {
   formatCareerProgressionForForm,
   formatMultilineForForm,
   formatPreviousRoleForForm,
+  formatRolesForForm,
   parseCareerProgressionJson,
   parsePreviousRoleJson,
   splitMultiline,
@@ -50,6 +53,7 @@ const EMPTY_FORM: ExperienceFormValues = {
   skills: [],
   careerProgression: "",
   previousRole: "",
+  roles: "",
 }
 
 function sanitizeStringList(values: readonly string[]): string[] {
@@ -90,6 +94,8 @@ function toDateInputValue(value: string | null | undefined) {
 }
 
 export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [experiences, setExperiences] = React.useState<ExperienceRow[]>(initialExperiences)
   const experiencesRef = React.useRef(experiences)
   React.useEffect(() => {
@@ -105,6 +111,28 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
   const [, startQuickTransition] = useTransition()
 
   const openCreateDrawer = React.useCallback(() => setDrawerState({ mode: "create" }), [])
+
+  // Listen for create events from topbar
+  React.useEffect(() => {
+    const handleCreateEvent = (event: CustomEvent) => {
+      if (event.detail?.section === "/admin/experiences") {
+        openCreateDrawer()
+        router.replace("/admin/experiences")
+      }
+    }
+    window.addEventListener("admin:create" as any, handleCreateEvent as EventListener)
+    return () => {
+      window.removeEventListener("admin:create" as any, handleCreateEvent as EventListener)
+    }
+  }, [openCreateDrawer, router])
+
+  // Check URL params for create trigger
+  React.useEffect(() => {
+    if (searchParams.get("create") === "true") {
+      openCreateDrawer()
+      router.replace("/admin/experiences")
+    }
+  }, [searchParams, openCreateDrawer, router])
   const openEditDrawer = React.useCallback((experience: ExperienceRow) => setDrawerState({ mode: "edit", experience }), [])
   const openDuplicateDrawer = React.useCallback((experience: ExperienceRow) => {
     setDrawerState({
@@ -353,6 +381,39 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
     [startQuickTransition],
   )
 
+  const handleTogglePublished = React.useCallback(
+    (experience: ExperienceRow) => {
+      const snapshot = experiencesRef.current
+      const optimistic = snapshot.map((exp) =>
+        exp.id === experience.id
+          ? { ...exp, published: !exp.published }
+          : exp,
+      )
+      setExperiences(optimistic)
+      experiencesRef.current = optimistic
+
+      startTransition(() => {
+        void (async () => {
+          const result = await toggleExperiencePublished(experience.id)
+          if (!result.ok) {
+            setExperiences(snapshot)
+            experiencesRef.current = snapshot
+            toast.error(result.message)
+            return
+          }
+
+          setExperiences((current) => {
+            const next = current.map((exp) => (exp.id === result.data.id ? result.data : exp))
+            experiencesRef.current = next
+            return next
+          })
+          toast.success(result.data.published ? "Experience is now visible" : "Experience is now hidden")
+        })()
+      })
+    },
+    [startTransition],
+  )
+
   const columns = React.useMemo(
     () =>
       createExperienceColumns({
@@ -360,8 +421,9 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
         onDuplicate: openDuplicateDrawer,
         onQuickDuplicate: handleQuickDuplicate,
         onDelete: handleDelete,
+        onTogglePublished: handleTogglePublished,
       }),
-    [handleDelete, handleQuickDuplicate, openDuplicateDrawer, openEditDrawer],
+    [handleDelete, handleQuickDuplicate, handleTogglePublished, openDuplicateDrawer, openEditDrawer],
   )
 
   const drawerDefaultValues = React.useMemo((): ExperienceFormValues => {
@@ -389,6 +451,7 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
       skills: experience.skills ? sanitizeStringList(experience.skills) : [],
       careerProgression: formatCareerProgressionForForm(experience.careerProgression),
       previousRole: formatPreviousRoleForForm(experience.previousRole),
+      roles: formatRolesForForm(experience.roles),
     }
   }, [drawerState])
 

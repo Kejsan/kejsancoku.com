@@ -65,6 +65,7 @@ export async function GET() {
     )
   }
   const experiences = await prisma.experience.findMany({
+    where: { published: true },
     orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
   })
   return NextResponse.json(experiences.map((experience) => toPublicExperience(experience)))

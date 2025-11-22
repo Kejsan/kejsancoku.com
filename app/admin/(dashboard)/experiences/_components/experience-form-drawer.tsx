@@ -321,6 +321,39 @@ export function ExperienceFormDrawer({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="roles"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Multiple Roles (JSON)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder='[
+  {
+    "title": "Senior Developer",
+    "startDate": "2022-01-01",
+    "endDate": "2023-06-30",
+    "description": "Led team of 5 developers"
+  },
+  {
+    "title": "Lead Developer",
+    "startDate": "2023-07-01",
+    "endDate": null,
+    "description": "Managing architecture decisions"
+  }
+]'
+                      className="font-mono text-sm min-h-[200px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Optional: Add multiple roles within the same company. Each role should have title, startDate, endDate (or null for current), and description.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <SheetFooter className="mt-auto">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel

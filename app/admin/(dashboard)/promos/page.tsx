@@ -315,6 +315,26 @@ export default function PromosPage() {
                           <span>Order: {promo.displayOrder}</span>
                           <div className="flex gap-2">
                             <Button
+                              variant={promo.isEnabled ? "secondary" : "default"}
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(`/api/promos/${promo.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ ...promo, isEnabled: !promo.isEnabled }),
+                                  })
+                                  if (!res.ok) throw new Error("Failed to toggle")
+                                  toast.success(promo.isEnabled ? "Promo hidden" : "Promo shown")
+                                  void fetchPromos()
+                                } catch (err) {
+                                  toast.error("Failed to toggle promo")
+                                }
+                              }}
+                            >
+                              {promo.isEnabled ? "Hide" : "Show"}
+                            </Button>
+                            <Button
                               variant="outline"
                               size="sm"
                               onClick={() => openEditDialog(promo)}

@@ -46,6 +46,9 @@ export async function PUT(
         name: data.name,
         url: data.url,
         description: data.description,
+        image: data.image || null,
+        blogPostSlug: data.blogPostSlug || null,
+        published: data.published !== undefined ? data.published : existing.published,
       },
     })
 

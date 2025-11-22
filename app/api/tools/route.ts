@@ -9,14 +9,20 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabaseClient"
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!prisma) {
     return NextResponse.json(
       { error: "Database not configured" },
       { status: 503 }
     )
   }
+  
+  // Check if this is an admin request
+  const url = new URL(request.url)
+  const includeUnpublished = url.searchParams.get("admin") === "true"
+  
   const tools = await prisma.tool.findMany({
+    where: includeUnpublished ? undefined : { published: true },
     orderBy: {
       createdAt: "desc",
     },
@@ -51,6 +57,9 @@ export async function POST(request: Request) {
         name: data.name,
         url: data.url,
         description: data.description,
+        image: data.image || null,
+        blogPostSlug: data.blogPostSlug || null,
+        published: data.published !== undefined ? data.published : true,
       },
     })
 

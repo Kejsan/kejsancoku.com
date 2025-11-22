@@ -21,6 +21,7 @@ import {
   createWorkSample,
   deleteWorkSample,
   duplicateWorkSample,
+  toggleWorkSamplePublished,
   updateWorkSample,
 } from "../actions"
 import { workSampleFormSchema, type WorkSampleFormValues } from "../schema"
@@ -259,6 +260,39 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
     setPreviewSample(sample)
   }, [])
 
+  const handleTogglePublished = React.useCallback(
+    (sample: WorkSampleRow) => {
+      const snapshot = samplesRef.current
+      const optimistic = snapshot.map((s) =>
+        s.id === sample.id
+          ? { ...s, published: !s.published }
+          : s,
+      )
+      setSamples(optimistic)
+      samplesRef.current = optimistic
+
+      startTransition(() => {
+        void (async () => {
+          const result = await toggleWorkSamplePublished(sample.id)
+          if (!result.ok) {
+            setSamples(snapshot)
+            samplesRef.current = snapshot
+            toast.error(result.message)
+            return
+          }
+
+          setSamples((current) => {
+            const next = current.map((s) => (s.id === result.data.id ? result.data : s))
+            samplesRef.current = next
+            return next
+          })
+          toast.success(result.data.published ? "Work sample is now visible" : "Work sample is now hidden")
+        })()
+      })
+    },
+    [startTransition],
+  )
+
   const columns = React.useMemo(
     () =>
       createWorkSampleColumns({
@@ -267,8 +301,9 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
         onDuplicate: openDuplicateDrawer,
         onQuickDuplicate: handleQuickDuplicate,
         onDelete: handleDelete,
+        onTogglePublished: handleTogglePublished,
       }),
-    [handleDelete, handleQuickDuplicate, handleView, openDuplicateDrawer, openEditDrawer],
+    [handleDelete, handleQuickDuplicate, handleTogglePublished, handleView, openDuplicateDrawer, openEditDrawer],
   )
 
   const drawerDefaultValues = React.useMemo((): WorkSampleFormValues => {

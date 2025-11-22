@@ -191,6 +191,65 @@ export async function createPost(
   }
 }
 
+export async function bulkCreatePosts(
+  inputs: PostFormValues[],
+): Promise<ActionResult<{ count: number; created: ReturnType<typeof serializePost>[] }>> {
+  if (!prisma) {
+    return { ok: false, message: "Database is not configured." }
+  }
+
+  const session = await ensureAdminSession()
+  if (!("email" in session)) {
+    return session
+  }
+
+  if (inputs.length === 0) {
+    return { ok: false, message: "No posts to create" }
+  }
+
+  const validated: PostFormValues[] = []
+  for (const input of inputs) {
+    const parsed = postFormSchema.safeParse(input)
+    if (parsed.success) {
+      validated.push(parsed.data)
+    }
+  }
+
+  if (validated.length === 0) {
+    return { ok: false, message: "No valid posts to create" }
+  }
+
+  try {
+    const created = []
+    for (const input of validated) {
+      try {
+        const data = normalizePostInput(input, session.email ?? null)
+        const post = await prisma.post.create({ data })
+        await recordAudit({
+          actorEmail: session.email,
+          entityType: "Post",
+          entityId: post.slug,
+          action: "CREATE",
+          diff: buildAuditDiff(null, post),
+        })
+        created.push(serializePost(post))
+      } catch (error) {
+        console.error(`Failed to create post ${input.slug}`, error)
+        // Continue with other posts
+      }
+    }
+
+    revalidatePath("/admin/posts")
+    revalidatePublicPostRoutesIfNeeded(...created.map((p) => ({ status: p.status, published: p.published })))
+
+    return { ok: true, data: { count: created.length, created } }
+  } catch (error) {
+    console.error("Failed to bulk create posts", error)
+    const message = error instanceof Error ? error.message : "Failed to bulk create posts"
+    return { ok: false, message }
+  }
+}
+
 export async function updatePost(
   slug: string,
   input: PostFormValues,

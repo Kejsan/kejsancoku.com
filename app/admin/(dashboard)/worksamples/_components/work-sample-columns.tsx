@@ -1,7 +1,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { ExternalLink, MoreHorizontal, Pencil, Copy, Trash2, Eye } from "lucide-react"
+import { ExternalLink, MoreHorizontal, Pencil, Copy, Trash2, Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -23,6 +23,7 @@ type ColumnHandlers = {
   onDuplicate: (sample: WorkSampleRow) => void
   onQuickDuplicate: (sample: WorkSampleRow) => void
   onDelete: (sample: WorkSampleRow) => void
+  onTogglePublished: (sample: WorkSampleRow) => void
 }
 
 export function createWorkSampleColumns({
@@ -31,6 +32,7 @@ export function createWorkSampleColumns({
   onDuplicate,
   onQuickDuplicate,
   onDelete,
+  onTogglePublished,
 }: ColumnHandlers): ColumnDef<WorkSampleRow, unknown>[] {
   return [
     {
@@ -86,6 +88,30 @@ export function createWorkSampleColumns({
       ),
     },
     {
+      accessorKey: "published",
+      header: "Status",
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onTogglePublished(row.original)}
+          className="h-8 gap-2"
+        >
+          {row.original.published ? (
+            <>
+              <Eye className="h-4 w-4 text-green-600" />
+              <span className="text-xs">Visible</span>
+            </>
+          ) : (
+            <>
+              <EyeOff className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Hidden</span>
+            </>
+          )}
+        </Button>
+      ),
+    },
+    {
       id: "actions",
       cell: ({ row }) => (
         <DropdownMenu>
@@ -109,6 +135,18 @@ export function createWorkSampleColumns({
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onQuickDuplicate(row.original)}>
               <Copy className="mr-2 h-4 w-4" /> Quick duplicate
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onTogglePublished(row.original)}>
+              {row.original.published ? (
+                <>
+                  <EyeOff className="mr-2 h-4 w-4" /> Hide from public
+                </>
+              ) : (
+                <>
+                  <Eye className="mr-2 h-4 w-4" /> Show on public
+                </>
+              )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onDelete(row.original)} className="text-destructive focus:text-destructive">

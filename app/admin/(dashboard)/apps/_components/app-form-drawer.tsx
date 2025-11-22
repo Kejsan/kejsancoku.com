@@ -128,6 +128,38 @@ export function AppFormDrawer({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="image"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://example.com/image.jpg" type="url" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-xs text-muted-foreground">
+                    Optional: Add an image to showcase this app
+                  </p>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="blogPostSlug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Blog Post Slug</FormLabel>
+                  <FormControl>
+                    <Input placeholder="blog-post-about-this-app" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-xs text-muted-foreground">
+                    Optional: Link to a blog post about this app
+                  </p>
+                </FormItem>
+              )}
+            />
             <SheetFooter className="mt-auto">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel

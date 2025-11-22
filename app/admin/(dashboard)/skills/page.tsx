@@ -38,7 +38,7 @@ export default function SkillsPage() {
   const fetchSkills = async () => {
     setIsLoading(true)
     try {
-      const res = await fetch("/api/skills")
+      const res = await fetch("/api/skills?admin=true")
       if (!res.ok) {
         throw new Error("Failed to load skills")
       }
@@ -218,6 +218,26 @@ export default function SkillsPage() {
                 <span className="rounded-full bg-muted px-2 py-1">ID: {skill.id}</span>
               </div>
               <div className="mt-auto flex items-center gap-2">
+                <Button
+                  variant={skill.published ? "secondary" : "default"}
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(`/api/skills/${skill.id}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ ...skill, published: !skill.published }),
+                      })
+                      if (!res.ok) throw new Error("Failed to toggle")
+                      toast.success(skill.published ? "Skill hidden" : "Skill shown")
+                      fetchSkills()
+                    } catch (err) {
+                      toast.error("Failed to toggle skill")
+                    }
+                  }}
+                >
+                  {skill.published ? "Hide" : "Show"}
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => handleEdit(skill)}>
                   Edit
                 </Button>

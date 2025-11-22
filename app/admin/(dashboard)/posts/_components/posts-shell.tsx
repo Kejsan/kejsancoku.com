@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import { useTransition } from "react"
-import { Filter } from "lucide-react"
+import { useSearchParams, useRouter } from "next/navigation"
+import { Filter, Upload } from "lucide-react"
 import { toast } from "sonner"
 
 import { DataTable } from "@/components/admin/ui/data-table"
@@ -27,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  bulkCreatePosts,
   bulkDeletePosts,
   bulkPublishPosts,
   bulkUnpublishPosts,
@@ -35,6 +37,7 @@ import {
   duplicatePost,
   updatePost,
 } from "../actions"
+import { CSVUploadDialog } from "./csv-upload-dialog"
 import { clientDateTimeToIso } from "../date-utils"
 import { postFormSchema, type PostFormValues } from "../schema"
 import type { SerializedPost } from "../serializers"
@@ -138,6 +141,8 @@ type PostsPageShellProps = {
 }
 
 export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [posts, setPosts] = React.useState<PostRow[]>(() =>
     [...initialPosts].sort((a, b) => new Date(b.updatedAt).valueOf() - new Date(a.updatedAt).valueOf()),
   )
@@ -150,6 +155,7 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
   const [deleteTarget, setDeleteTarget] = React.useState<PostRow | null>(null)
   const [bulkDeleteState, setBulkDeleteState] = React.useState<BulkDeleteState | null>(null)
   const [statusFilter, setStatusFilter] = React.useState<StatusFilterValue>("all")
+  const [csvUploadOpen, setCsvUploadOpen] = React.useState(false)
 
   const [isPending, startTransition] = useTransition()
   const [isBulkPending, startBulkTransition] = useTransition()
@@ -170,6 +176,30 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
   const openCreateDrawer = React.useCallback(() => {
     setDrawerState({ mode: "create" })
   }, [])
+
+  // Listen for create events from topbar
+  React.useEffect(() => {
+    const handleCreateEvent = (event: CustomEvent) => {
+      if (event.detail?.section === "/admin/posts") {
+        openCreateDrawer()
+        // Clean up URL param
+        router.replace("/admin/posts")
+      }
+    }
+    window.addEventListener("admin:create" as any, handleCreateEvent as EventListener)
+    return () => {
+      window.removeEventListener("admin:create" as any, handleCreateEvent as EventListener)
+    }
+  }, [openCreateDrawer, router])
+
+  // Check URL params for create trigger
+  React.useEffect(() => {
+    if (searchParams.get("create") === "true") {
+      openCreateDrawer()
+      // Clean up URL param
+      router.replace("/admin/posts")
+    }
+  }, [searchParams, openCreateDrawer, router])
 
   const openEditDrawer = React.useCallback((post: PostRow) => {
     setDrawerState({ mode: "edit", post })
@@ -459,9 +489,15 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
             ),
           }}
           primaryAction={
-            <Button size="sm" onClick={openCreateDrawer}>
-              New post
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={openCreateDrawer}>
+                New post
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setCsvUploadOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Bulk upload
+              </Button>
+            </div>
           }
           toolbarActions={(table) => (
             <DropdownMenu>
@@ -546,6 +582,21 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
           return handleCreate(values)
         }}
         isPending={isPending}
+      />
+
+      <CSVUploadDialog
+        open={csvUploadOpen}
+        onOpenChange={setCsvUploadOpen}
+        onUpload={async (rows) => {
+          const result = await bulkCreatePosts(rows)
+          if (!result.ok) {
+            toast.error(result.message)
+            return
+          }
+          toast.success(`Successfully created ${result.data.count} post${result.data.count !== 1 ? "s" : ""}`)
+          // Refresh posts list
+          applyServerUpdates(result.data.created)
+        }}
       />
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>

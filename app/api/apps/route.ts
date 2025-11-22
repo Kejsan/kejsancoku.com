@@ -16,7 +16,10 @@ export async function GET() {
       { status: 503 }
     )
   }
-  const apps = await prisma.webApp.findMany()
+  const apps = await prisma.webApp.findMany({
+    where: { published: true },
+    orderBy: { createdAt: "desc" },
+  })
   return NextResponse.json(apps)
 }
 

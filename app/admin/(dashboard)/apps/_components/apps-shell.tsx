@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useTransition } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
 import { DataTable } from "@/components/admin/ui/data-table"
@@ -22,6 +22,7 @@ import {
   createWebApp,
   deleteWebApp,
   duplicateWebApp,
+  toggleWebAppPublished,
   updateWebApp,
 } from "../actions"
 import { webAppFormSchema, type WebAppFormValues } from "../schema"
@@ -33,6 +34,8 @@ const EMPTY_FORM: WebAppFormValues = {
   name: "",
   url: "",
   description: "",
+  image: "",
+  blogPostSlug: "",
 }
 
 type DrawerState = {
@@ -50,12 +53,13 @@ type AppsShellProps = {
 }
 
 export function AppsShell({ initialApps }: AppsShellProps) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [apps, setApps] = React.useState<AppRow[]>(initialApps)
   const appsRef = React.useRef(apps)
   React.useEffect(() => {
     appsRef.current = apps
   }, [apps])
-  const router = useRouter()
 
   const [drawerState, setDrawerState] = React.useState<DrawerState | null>(null)
   const [deleteTarget, setDeleteTarget] = React.useState<AppRow | null>(null)
@@ -66,6 +70,28 @@ export function AppsShell({ initialApps }: AppsShellProps) {
   const [, startQuickTransition] = useTransition()
 
   const openCreateDrawer = React.useCallback(() => setDrawerState({ mode: "create" }), [])
+
+  // Listen for create events from topbar
+  React.useEffect(() => {
+    const handleCreateEvent = (event: CustomEvent) => {
+      if (event.detail?.section === "/admin/apps") {
+        openCreateDrawer()
+        router.replace("/admin/apps")
+      }
+    }
+    window.addEventListener("admin:create" as any, handleCreateEvent as EventListener)
+    return () => {
+      window.removeEventListener("admin:create" as any, handleCreateEvent as EventListener)
+    }
+  }, [openCreateDrawer, router])
+
+  // Check URL params for create trigger
+  React.useEffect(() => {
+    if (searchParams.get("create") === "true") {
+      openCreateDrawer()
+      router.replace("/admin/apps")
+    }
+  }, [searchParams, openCreateDrawer, router])
   const openEditDrawer = React.useCallback((app: AppRow) => setDrawerState({ mode: "edit", app }), [])
   const openDuplicateDrawer = React.useCallback((app: AppRow) => {
     setDrawerState({
@@ -263,6 +289,39 @@ export function AppsShell({ initialApps }: AppsShellProps) {
     [router],
   )
 
+  const handleTogglePublished = React.useCallback(
+    (app: AppRow) => {
+      const snapshot = appsRef.current
+      const optimistic = snapshot.map((a) =>
+        a.id === app.id
+          ? { ...a, published: !a.published }
+          : a,
+      )
+      setApps(optimistic)
+      appsRef.current = optimistic
+
+      startTransition(() => {
+        void (async () => {
+          const result = await toggleWebAppPublished(app.id)
+          if (!result.ok) {
+            setApps(snapshot)
+            appsRef.current = snapshot
+            toast.error(result.message)
+            return
+          }
+
+          setApps((current) => {
+            const next = current.map((a) => (a.id === result.data.id ? result.data : a))
+            appsRef.current = next
+            return next
+          })
+          toast.success(result.data.published ? "App is now visible" : "App is now hidden")
+        })()
+      })
+    },
+    [startTransition],
+  )
+
   const columns = React.useMemo(
     () =>
       createAppColumns({
@@ -271,8 +330,9 @@ export function AppsShell({ initialApps }: AppsShellProps) {
         onDuplicate: openDuplicateDrawer,
         onQuickDuplicate: handleQuickDuplicate,
         onDelete: handleDelete,
+        onTogglePublished: handleTogglePublished,
       }),
-    [handleDelete, handleQuickDuplicate, handleView, openDuplicateDrawer, openEditDrawer],
+    [handleDelete, handleQuickDuplicate, handleTogglePublished, handleView, openDuplicateDrawer, openEditDrawer],
   )
 
   const drawerDefaultValues = React.useMemo((): WebAppFormValues => {
@@ -283,6 +343,8 @@ export function AppsShell({ initialApps }: AppsShellProps) {
       name: app.name ?? "",
       url: app.url ?? "",
       description: app.description ?? "",
+      image: app.image ?? "",
+      blogPostSlug: app.blogPostSlug ?? "",
     }
   }, [drawerState])
 

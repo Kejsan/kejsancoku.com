@@ -16,12 +16,23 @@ interface Tool {
   name: string
   url: string
   description?: string | null
+  image?: string | null
+  blogPostSlug?: string | null
+  published?: boolean
 }
+
+const optionalUrl = z
+  .string()
+  .url({ message: "Must be a valid URL" })
+  .optional()
+  .or(z.literal(""))
 
 const toolSchema = z.object({
   name: z.string().min(1, "Name is required"),
   url: z.string().url("Must be a valid URL"),
   description: z.string().optional(),
+  image: optionalUrl,
+  blogPostSlug: z.string().optional(),
 })
 
 type ToolFormValues = z.infer<typeof toolSchema>
@@ -40,7 +51,7 @@ export default function ToolsPage() {
   const fetchTools = async () => {
     setIsLoading(true)
     try {
-      const res = await fetch("/api/tools")
+      const res = await fetch("/api/tools?admin=true")
       if (!res.ok) {
         throw new Error("Failed to load tools")
       }
@@ -183,6 +194,26 @@ export default function ToolsPage() {
               className="border-border bg-card text-card-foreground hover:border-primary/40"
               actions={
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant={tool.published ? "secondary" : "default"}
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`/api/tools/${tool.id}`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ ...tool, published: !tool.published }),
+                        })
+                        if (!res.ok) throw new Error("Failed to toggle")
+                        toast.success(tool.published ? "Tool hidden" : "Tool shown")
+                        fetchTools()
+                      } catch (err) {
+                        toast.error("Failed to toggle tool")
+                      }
+                    }}
+                  >
+                    {tool.published ? "Hide" : "Show"}
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => handleEdit(tool)}>
                     Edit
                   </Button>
@@ -210,6 +241,8 @@ export default function ToolsPage() {
           name: editingTool?.name || "",
           url: editingTool?.url || "",
           description: editingTool?.description || "",
+          image: editingTool?.image || "",
+          blogPostSlug: editingTool?.blogPostSlug || "",
         }}
       >
         {(form) => (
@@ -231,6 +264,20 @@ export default function ToolsPage() {
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" {...form.register("description")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="image">Image URL</Label>
+              <Input id="image" type="url" {...form.register("image")} placeholder="https://example.com/image.jpg" />
+              {form.formState.errors.image && (
+                <p className="text-sm text-red-500">{form.formState.errors.image.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="blogPostSlug">Blog Post Slug (optional)</Label>
+              <Input id="blogPostSlug" {...form.register("blogPostSlug")} placeholder="blog-post-slug" />
+              <p className="text-xs text-muted-foreground">
+                Link to a blog post about this tool
+              </p>
             </div>
           </>
         )}

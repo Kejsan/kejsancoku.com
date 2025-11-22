@@ -54,6 +54,8 @@ export async function createWebApp(
     name: parsed.data.name.trim(),
     url: parsed.data.url && parsed.data.url.trim().length > 0 ? parsed.data.url.trim() : null,
     description: parsed.data.description?.trim() || null,
+    image: parsed.data.image && parsed.data.image.trim().length > 0 ? parsed.data.image.trim() : null,
+    blogPostSlug: parsed.data.blogPostSlug && parsed.data.blogPostSlug.trim().length > 0 ? parsed.data.blogPostSlug.trim() : null,
   }
 
   try {
@@ -98,6 +100,8 @@ export async function updateWebApp(
     name: parsed.data.name.trim(),
     url: parsed.data.url && parsed.data.url.trim().length > 0 ? parsed.data.url.trim() : null,
     description: parsed.data.description?.trim() || null,
+    image: parsed.data.image && parsed.data.image.trim().length > 0 ? parsed.data.image.trim() : null,
+    blogPostSlug: parsed.data.blogPostSlug && parsed.data.blogPostSlug.trim().length > 0 ? parsed.data.blogPostSlug.trim() : null,
   }
 
   try {
@@ -176,6 +180,8 @@ export async function duplicateWebApp(
         name: `${existing.name} (Copy)`.trim(),
         url: existing.url,
         description: existing.description,
+        image: existing.image,
+        blogPostSlug: existing.blogPostSlug,
       },
     })
 
@@ -192,6 +198,45 @@ export async function duplicateWebApp(
   } catch (error) {
     console.error("Failed to duplicate app", error)
     const message = error instanceof Error ? error.message : "Failed to duplicate app"
+    return { ok: false, message }
+  }
+}
+
+export async function toggleWebAppPublished(
+  id: number,
+): Promise<ActionResult<ReturnType<typeof serializeWebApp>>> {
+  if (!prisma) {
+    return { ok: false, message: "Database is not configured." }
+  }
+
+  const session = await ensureAdminSession()
+  if (!("email" in session)) {
+    return session
+  }
+
+  try {
+    const existing = await prisma.webApp.findUnique({ where: { id } })
+    if (!existing) {
+      return { ok: false, message: "App not found" }
+    }
+
+    const appRecord = await prisma.webApp.update({
+      where: { id },
+      data: { published: !existing.published },
+    })
+    await recordAudit({
+      actorEmail: session.email,
+      entityType: "WebApp",
+      entityId: appRecord.id,
+      action: "UPDATE",
+      diff: buildAuditDiff(existing, appRecord),
+    })
+    revalidatePath("/admin/apps")
+
+    return { ok: true, data: serializeWebApp(appRecord) }
+  } catch (error) {
+    console.error("Failed to toggle app published", error)
+    const message = error instanceof Error ? error.message : "Failed to toggle app published"
     return { ok: false, message }
   }
 }

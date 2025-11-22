@@ -1,8 +1,7 @@
 "use client"
 
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useMemo, useTransition } from "react"
+import { useRouter, usePathname } from "next/navigation"
+import { useMemo, useTransition, useEffect, useState } from "react"
 import {
   Bell,
   ChevronDown,
@@ -10,6 +9,7 @@ import {
   PlusCircle,
   Search,
   UserRound,
+  Settings,
 } from "lucide-react"
 
 import type { AdminNavItem } from "@/app/admin/nav-items"
@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 
 type AdminTopbarProps = {
   items: AdminNavItem[]
@@ -43,18 +44,47 @@ type AdminTopbarProps = {
 
 export function AdminTopbar({ items, user }: AdminTopbarProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const supabaseConfigured = isSupabaseConfigured
   const supabase = useMemo(
     () => (supabaseConfigured ? getSupabaseBrowserClient() : null),
     [supabaseConfigured],
   )
   const [signingOut, startSignOut] = useTransition()
+  const [notificationCount, setNotificationCount] = useState(0)
 
   const initials =
     user?.name?.split(" ")
       .map((part) => part[0])
       .join("") || user?.email?.[0]?.toUpperCase() || "A"
   const displayName = user?.name ?? user?.email ?? "Admin"
+
+  // Handle create button - navigate to section with create param
+  const handleCreate = (href: string) => {
+    if (pathname === href) {
+      // If already on the page, trigger via custom event
+      window.dispatchEvent(new CustomEvent("admin:create", { detail: { section: href } }))
+      // Also update URL to trigger useEffect in shell components
+      router.push(`${href}?create=true`)
+    } else {
+      router.push(`${href}?create=true`)
+    }
+  }
+
+  // Listen for create events from shell components
+  useEffect(() => {
+    const handleCreateEvent = (event: CustomEvent) => {
+      const section = event.detail?.section
+      if (section && pathname === section) {
+        // Trigger create on current page
+        window.dispatchEvent(new CustomEvent("admin:create", { detail: { section } }))
+      }
+    }
+    window.addEventListener("admin:create" as any, handleCreateEvent as EventListener)
+    return () => {
+      window.removeEventListener("admin:create" as any, handleCreateEvent as EventListener)
+    }
+  }, [pathname])
 
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full items-center gap-4 border-b bg-background/80 px-4 backdrop-blur">
@@ -86,25 +116,56 @@ export function AdminTopbar({ items, user }: AdminTopbarProps) {
             {items
               .filter((item) => item.href !== "/admin")
               .map((item) => (
-                <DropdownMenuItem key={item.href} asChild>
-                  <Link href={`${item.href}/new`}>{item.label}</Link>
+                <DropdownMenuItem
+                  key={item.href}
+                  onClick={() => handleCreate(item.href)}
+                >
+                  {item.label}
                 </DropdownMenuItem>
               ))}
           </DropdownMenuContent>
         </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9">
+            <Button variant="ghost" size="icon" className="h-9 w-9 relative">
               <Bell className="h-4 w-4" />
+              {notificationCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {notificationCount > 9 ? "9+" : notificationCount}
+                </Badge>
+              )}
               <span className="sr-only">Open notifications</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-72">
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>
-              You&apos;re all caught up! 🎉
-            </DropdownMenuItem>
+            {notificationCount === 0 ? (
+              <DropdownMenuItem disabled>
+                You&apos;re all caught up! 🎉
+              </DropdownMenuItem>
+            ) : (
+              <>
+                <DropdownMenuItem>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium">Recent activity</p>
+                    <p className="text-xs text-muted-foreground">
+                      {notificationCount} new notification{notificationCount !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setNotificationCount(0)}
+                  className="text-center justify-center"
+                >
+                  Mark all as read
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
         <ThemeToggle />
@@ -144,10 +205,11 @@ export function AdminTopbar({ items, user }: AdminTopbarProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/admin/profile" className="flex items-center gap-2">
-                <UserRound className="h-4 w-4" /> Profile
-              </Link>
+            <DropdownMenuItem
+              onClick={() => router.push("/admin")}
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" /> Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

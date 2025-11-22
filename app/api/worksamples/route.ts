@@ -12,7 +12,10 @@ export async function GET() {
       { status: 503 }
     )
   }
-  const samples = await prisma.workSample.findMany()
+  const samples = await prisma.workSample.findMany({
+    where: { published: true },
+    orderBy: { createdAt: "desc" },
+  })
   return NextResponse.json(samples)
 }
 
@@ -29,7 +32,11 @@ export async function POST(request: Request) {
   }
   const data = await request.json()
   try {
-    const sample = await prisma.workSample.create({ data })
+    const createData = {
+      ...data,
+      published: data.published !== undefined ? data.published : true,
+    }
+    const sample = await prisma.workSample.create({ data: createData })
     await recordAudit({
       actorEmail: sessionResult.session.user.email,
       entityType: 'WorkSample',
