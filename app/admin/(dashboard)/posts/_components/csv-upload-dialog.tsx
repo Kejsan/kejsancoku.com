@@ -35,6 +35,7 @@ type CSVUploadDialogProps = {
 export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialogProps) {
   const [file, setFile] = React.useState<File | null>(null)
   const [preview, setPreview] = React.useState<CSVRow[]>([])
+  const [totalRows, setTotalRows] = React.useState(0)
   const [isProcessing, setIsProcessing] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -45,12 +46,15 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
     }
 
     setFile(selectedFile)
+    setPreview([])
+    setTotalRows(0)
 
     try {
       const text = await selectedFile.text()
       const lines = text.split("\n").filter((line) => line.trim())
       if (lines.length < 2) {
         toast.error("CSV file must have at least a header row and one data row")
+        setFile(null)
         return
       }
 
@@ -86,6 +90,7 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
 
       if (missingHeaders.length > 0) {
         toast.error(`Missing required columns: ${missingHeaders.join(", ")}`)
+        setFile(null)
         return
       }
 
@@ -121,14 +126,19 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
 
       if (rows.length === 0) {
         toast.error("No valid rows found in CSV file")
+        setFile(null)
         return
       }
 
       setPreview(rows.slice(0, 5)) // Show first 5 rows as preview
+      setTotalRows(rows.length)
       toast.success(`Parsed ${rows.length} post${rows.length !== 1 ? "s" : ""} from CSV`)
     } catch (error) {
       console.error("Failed to parse CSV", error)
       toast.error("Failed to parse CSV file. Please check the format.")
+      setFile(null)
+      setPreview([])
+      setTotalRows(0)
     }
   }, [])
 
@@ -195,6 +205,7 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
       await onUpload(rows)
       setFile(null)
       setPreview([])
+      setTotalRows(0)
       onOpenChange(false)
     } catch (error) {
       console.error("Upload failed", error)
@@ -207,10 +218,13 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
   const handleReset = React.useCallback(() => {
     setFile(null)
     setPreview([])
+    setTotalRows(0)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
   }, [])
+
+  const displayRowCount = totalRows > 0 ? totalRows : preview.length
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -263,7 +277,7 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
 
           {preview.length > 0 && (
             <div className="space-y-2">
-              <Label>Preview (first {preview.length} of {preview.length} rows)</Label>
+              <Label>Preview (first {preview.length} of {displayRowCount} rows)</Label>
               <div className="border rounded-lg overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -304,7 +318,7 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
             Cancel
           </Button>
           <Button onClick={handleUpload} disabled={!file || preview.length === 0 || isProcessing}>
-            {isProcessing ? "Uploading..." : `Upload ${preview.length > 0 ? preview.length : ""} Post${preview.length !== 1 ? "s" : ""}`}
+            {isProcessing ? "Uploading..." : `Upload ${displayRowCount > 0 ? displayRowCount : ""} Post${displayRowCount !== 1 ? "s" : ""}`}
           </Button>
         </DialogFooter>
       </DialogContent>
