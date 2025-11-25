@@ -1,5 +1,6 @@
 "use client"
 
+import type { Prisma } from "@prisma/client"
 import * as React from "react"
 import { useTransition } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -168,12 +169,15 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
       }
 
       const now = new Date()
-      let rolesValue: unknown = null
+      let rolesValue: Prisma.JsonValue | null = null
+
       if (parsed.data.roles?.trim()) {
         try {
-          rolesValue = JSON.parse(parsed.data.roles)
+          // If roles is a JSON string (e.g. '["SEO Specialist","Content Lead"]')
+          rolesValue = JSON.parse(parsed.data.roles) as Prisma.JsonValue
         } catch {
-          rolesValue = parsed.data.roles
+          // Fallback if it's just a raw string – still treat it as JSON-compatible
+          rolesValue = parsed.data.roles as unknown as Prisma.JsonValue
         }
       }
 
@@ -198,7 +202,7 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
         skills,
         careerProgression: careerProgression.data,
         previousRole: previousRole.data,
-        roles: rolesValue,
+        roles: rolesValue as Prisma.JsonValue,
         published: true,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
