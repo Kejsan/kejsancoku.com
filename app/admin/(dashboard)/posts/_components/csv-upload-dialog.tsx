@@ -108,7 +108,13 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
           if (header === "title" || header === "slug") {
             row[header as keyof CSVRow] = value as any
           } else if (header === "content" || header === "metadescription" || header === "featuredbanner") {
-            row[header === "metadescription" ? "metaDescription" : header === "featuredbanner" ? "featuredBanner" : header as keyof CSVRow] = value || undefined
+            row[
+              header === "metadescription"
+                ? "metaDescription"
+                : header === "featuredbanner"
+                  ? "featuredBanner"
+                  : (header as keyof CSVRow)
+            ] = (value || undefined) as any
           } else if (header === "status") {
             const status = value.toLowerCase()
             if (["draft", "scheduled", "published"].includes(status)) {
