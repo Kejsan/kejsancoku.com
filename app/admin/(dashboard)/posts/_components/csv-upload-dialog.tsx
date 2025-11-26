@@ -182,18 +182,37 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
 
         const row: CSVRow = {} as CSVRow
         headers.forEach((header, index) => {
-          const value = values[index]?.trim() || ""
-          if (header === "title" || header === "slug") {
+          const value = values[index]?.trim() ?? ""
+
+          // Simple string fields
+          if (header === "title" || header === "slug" || header === "category") {
             row[header as keyof CSVRow] = value as any
+
+            // Content / meta / featured banner fields
           } else if (header === "content" || header === "metadescription" || header === "featuredbanner") {
-            row[header === "metadescription" ? "metaDescription" : header === "featuredbanner" ? "featuredBanner" : header as keyof CSVRow] = value || undefined
+            const key =
+              header === "metadescription"
+                ? "metaDescription"
+                : header === "featuredbanner"
+                  ? "featuredBanner"
+                  : header
+
+            // allow empty -> undefined, but don't let TS overthink the union types
+            row[key as keyof CSVRow] = (value || undefined) as any
+
+            // Status field with strict union
           } else if (header === "status") {
             const status = value.toLowerCase()
             if (["draft", "scheduled", "published"].includes(status)) {
-              row.status = status as "draft" | "scheduled" | "published"
+              row.status = status as CSVRow["status"]
+            } else {
+              // fallback if CSV has something unexpected
+              row.status = "draft"
             }
-          } else if (header === "scheduledat" || header === "publishedat") {
-            row[header === "scheduledat" ? "scheduledAt" : "publishedAt" as keyof CSVRow] = value || undefined
+
+            // Any other headers (if you have them)
+          } else {
+            row[header as keyof CSVRow] = value as any
           }
         })
 
