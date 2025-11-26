@@ -106,7 +106,7 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
         headers.forEach((header, index) => {
           const value = values[index]?.trim() || ""
           if (header === "title" || header === "slug") {
-            row[header as keyof CSVRow] = value
+            row[header as keyof CSVRow] = value as any
           } else if (header === "content" || header === "metadescription" || header === "featuredbanner") {
             row[header === "metadescription" ? "metaDescription" : header === "featuredbanner" ? "featuredBanner" : header as keyof CSVRow] = value || undefined
           } else if (header === "status") {
@@ -184,7 +184,7 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
         headers.forEach((header, index) => {
           const value = values[index]?.trim() || ""
           if (header === "title" || header === "slug") {
-            row[header as keyof CSVRow] = value
+            row[header as keyof CSVRow] = value as any
           } else if (header === "content" || header === "metadescription" || header === "featuredbanner") {
             row[header === "metadescription" ? "metaDescription" : header === "featuredbanner" ? "featuredBanner" : header as keyof CSVRow] = value || undefined
           } else if (header === "status") {
