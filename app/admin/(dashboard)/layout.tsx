@@ -6,29 +6,10 @@ import { redirect } from "next/navigation"
 import { DashboardLayout } from "@/components/admin/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { getAdminSession } from "@/lib/auth"
-import {
-  SUPABASE_CONFIG_ERROR_MESSAGE,
-  isSupabaseConfigured,
-} from "@/lib/supabaseClient"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminDashboardLayout({ children }: { children: ReactNode }) {
-  if (!isSupabaseConfigured) {
-    return (
-      <DashboardErrorState
-        icon={<AlertTriangle className="h-12 w-12 text-amber-500" aria-hidden />}
-        title="Supabase configuration required"
-        message={SUPABASE_CONFIG_ERROR_MESSAGE}
-        actions={
-          <Button asChild>
-            <Link href="/">Return home</Link>
-          </Button>
-        }
-      />
-    )
-  }
-
   let session = null
   let sessionError: Error | null = null
 
