@@ -46,6 +46,16 @@ export default function ToolsPage() {
 
   useEffect(() => {
     fetchTools()
+
+    // Check URL params for create trigger
+    const searchParams = new URLSearchParams(window.location.search)
+    if (searchParams.get("create") === "true") {
+      setEditingTool(null)
+      setIsDialogOpen(true)
+      // Remove query param without full reload
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, "", newUrl)
+    }
   }, [])
 
   const fetchTools = async () => {

@@ -113,19 +113,7 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
 
   const openCreateDrawer = React.useCallback(() => setDrawerState({ mode: "create" }), [])
 
-  // Listen for create events from topbar
-  React.useEffect(() => {
-    const handleCreateEvent = (event: CustomEvent) => {
-      if (event.detail?.section === "/admin/experiences") {
-        openCreateDrawer()
-        router.replace("/admin/experiences")
-      }
-    }
-    window.addEventListener("admin:create" as any, handleCreateEvent as EventListener)
-    return () => {
-      window.removeEventListener("admin:create" as any, handleCreateEvent as EventListener)
-    }
-  }, [openCreateDrawer, router])
+
 
   // Check URL params for create trigger
   React.useEffect(() => {

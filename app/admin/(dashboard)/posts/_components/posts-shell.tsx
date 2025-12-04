@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useTransition } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import Link from "next/link"
 import { Filter, Upload } from "lucide-react"
 import { toast } from "sonner"
 
@@ -177,21 +178,6 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
     setDrawerState({ mode: "create" })
   }, [])
 
-  // Listen for create events from topbar
-  React.useEffect(() => {
-    const handleCreateEvent = (event: CustomEvent) => {
-      if (event.detail?.section === "/admin/posts") {
-        openCreateDrawer()
-        // Clean up URL param
-        router.replace("/admin/posts")
-      }
-    }
-    window.addEventListener("admin:create" as any, handleCreateEvent as EventListener)
-    return () => {
-      window.removeEventListener("admin:create" as any, handleCreateEvent as EventListener)
-    }
-  }, [openCreateDrawer, router])
-
   // Check URL params for create trigger
   React.useEffect(() => {
     if (searchParams.get("create") === "true") {
@@ -201,9 +187,9 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
     }
   }, [searchParams, openCreateDrawer, router])
 
-  const openEditDrawer = React.useCallback((post: PostRow) => {
-    setDrawerState({ mode: "edit", post })
-  }, [])
+  const navigateToEdit = React.useCallback((post: PostRow) => {
+    router.push(`/admin/posts/${post.id}/edit`)
+  }, [router])
 
   const openDuplicateDrawer = React.useCallback((post: PostRow) => {
     const suggestedSlug = ensureSlug(`${post.slug}-copy`)
@@ -292,7 +278,7 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
 
       startTransition(() => {
         void (async () => {
-          const result = await updatePost(drawerState.post!.slug, parsed.data)
+          const result = await updatePost(drawerState.post!.id, parsed.data)
           if (!result.ok) {
             setPosts(snapshot)
             postsRef.current = snapshot
@@ -318,15 +304,15 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
 
   const handleBulkStatusChange = React.useCallback(
     (rows: PostRow[], clearSelection: () => void, target: "publish" | "draft") => {
-      const slugs = rows.map((row) => row.slug)
-      if (slugs.length === 0) return
+      const ids = rows.map((row) => row.id)
+      if (ids.length === 0) return
 
       startStatusTransition(() => {
         void (async () => {
           const result =
             target === "publish"
-              ? await bulkPublishPosts(slugs)
-              : await bulkUnpublishPosts(slugs)
+              ? await bulkPublishPosts(ids)
+              : await bulkUnpublishPosts(ids)
 
           if (!result.ok) {
             toast.error(result.message)
@@ -367,7 +353,7 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
 
     startTransition(() => {
       void (async () => {
-        const result = await deletePost(deleteTarget.slug)
+        const result = await deletePost(deleteTarget.id)
         if (!result.ok) {
           setPosts(snapshot)
           postsRef.current = snapshot
@@ -383,15 +369,15 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
 
   const confirmBulkDelete = React.useCallback(() => {
     if (!bulkDeleteState) return
-    const idsToDelete = new Set(bulkDeleteState.rows.map((row) => row.slug))
+    const idsToDelete = new Set(bulkDeleteState.rows.map((row) => row.id))
     const snapshot = postsRef.current
-    const remaining = snapshot.filter((post) => !idsToDelete.has(post.slug))
+    const remaining = snapshot.filter((post) => !idsToDelete.has(post.id))
     setPosts(remaining)
     postsRef.current = remaining
 
     startBulkTransition(() => {
       void (async () => {
-        const result = await bulkDeletePosts(bulkDeleteState.rows.map((row) => row.slug))
+        const result = await bulkDeletePosts(bulkDeleteState.rows.map((row) => row.id))
         if (!result.ok) {
           setPosts(snapshot)
           postsRef.current = snapshot
@@ -414,7 +400,7 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
     (post: PostRow) => {
       startQuickTransition(() => {
         void (async () => {
-          const result = await duplicatePost(post.slug)
+          const result = await duplicatePost(post.id)
           if (!result.ok) {
             toast.error(result.message)
             return
@@ -437,12 +423,12 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
   const columns = React.useMemo(
     () =>
       createPostColumns({
-        onEdit: openEditDrawer,
+        onEdit: navigateToEdit,
         onDuplicate: openDuplicateDrawer,
         onQuickDuplicate: handleQuickDuplicate,
         onDelete: handleDelete,
       }),
-    [handleDelete, handleQuickDuplicate, openDuplicateDrawer, openEditDrawer],
+    [handleDelete, handleQuickDuplicate, openDuplicateDrawer, navigateToEdit],
   )
 
   const drawerDefaultValues = React.useMemo((): PostFormValues => {
@@ -490,8 +476,8 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
           }}
           primaryAction={
             <div className="flex items-center gap-2">
-              <Button size="sm" onClick={openCreateDrawer}>
-                New post
+              <Button size="sm" asChild>
+                <Link href="/admin/posts/create">New post</Link>
               </Button>
               <Button size="sm" variant="outline" onClick={() => setCsvUploadOpen(true)}>
                 <Upload className="mr-2 h-4 w-4" />
@@ -559,7 +545,7 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
             </div>
           )}
           isLoading={isPending || isBulkPending || isStatusPending}
-          getRowId={(row) => row.slug}
+          getRowId={(row) => row.id.toString()}
         />
       </div>
 

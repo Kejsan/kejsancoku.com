@@ -67,6 +67,17 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
   const [, startQuickTransition] = useTransition()
 
   const openCreateDrawer = React.useCallback(() => setDrawerState({ mode: "create" }), [])
+
+  // Check URL params for create trigger
+  React.useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search)
+    if (searchParams.get("create") === "true") {
+      openCreateDrawer()
+      // Remove query param without full reload
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, "", newUrl)
+    }
+  }, [openCreateDrawer])
   const openEditDrawer = React.useCallback((sample: WorkSampleRow) => setDrawerState({ mode: "edit", sample }), [])
   const openDuplicateDrawer = React.useCallback((sample: WorkSampleRow) => {
     setDrawerState({
@@ -94,6 +105,7 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
         title: parsed.data.title,
         url: parsed.data.url && parsed.data.url.length > 0 ? parsed.data.url : null,
         description: parsed.data.description?.length ? parsed.data.description : null,
+        published: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }

@@ -21,7 +21,7 @@ type CSVRow = {
   content?: string
   metaDescription?: string
   featuredBanner?: string
-  status?: "draft" | "scheduled" | "published"
+  status: "draft" | "scheduled" | "published"
   scheduledAt?: string
   publishedAt?: string
 }
@@ -102,7 +102,7 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
           continue
         }
 
-        const row: CSVRow = {} as CSVRow
+        const row: CSVRow = { status: "draft" } as CSVRow
         headers.forEach((header, index) => {
           const value = values[index]?.trim() || ""
           if (header === "title" || header === "slug") {
@@ -121,7 +121,8 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
               row.status = status as "draft" | "scheduled" | "published"
             }
           } else if (header === "scheduledat" || header === "publishedat") {
-            row[header === "scheduledat" ? "scheduledAt" : "publishedAt" as keyof CSVRow] = value || undefined
+            const key = header === "scheduledat" ? "scheduledAt" : "publishedAt"
+            row[key] = value || undefined
           }
         })
 
@@ -186,7 +187,7 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
         const values = parseCSVLine(lines[i])
         if (values.length !== headers.length) continue
 
-        const row: CSVRow = {} as CSVRow
+        const row: CSVRow = { status: "draft" } as CSVRow
         headers.forEach((header, index) => {
           const value = values[index]?.trim() ?? ""
 
@@ -217,7 +218,7 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
             }
 
             // Any other headers (if you have them)
-          } else {
+          } else if (header !== "status") {
             row[header as keyof CSVRow] = value as any
           }
         })

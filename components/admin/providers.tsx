@@ -11,6 +11,7 @@ export function AdminProviders({ children }: { children: ReactNode }) {
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
+      storageKey="kejsan-admin-theme"
     >
       {children}
       <Toaster richColors position="top-right" expand={false} />

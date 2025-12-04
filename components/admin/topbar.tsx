@@ -61,30 +61,10 @@ export function AdminTopbar({ items, user }: AdminTopbarProps) {
 
   // Handle create button - navigate to section with create param
   const handleCreate = (href: string) => {
-    if (pathname === href) {
-      // If already on the page, trigger via custom event
-      window.dispatchEvent(new CustomEvent("admin:create", { detail: { section: href } }))
-      // Also update URL to trigger useEffect in shell components
-      router.push(`${href}?create=true`)
-    } else {
-      router.push(`${href}?create=true`)
-    }
+    router.push(`${href}?create=true`)
   }
 
-  // Listen for create events from shell components
-  useEffect(() => {
-    const handleCreateEvent = (event: CustomEvent) => {
-      const section = event.detail?.section
-      if (section && pathname === section) {
-        // Trigger create on current page
-        window.dispatchEvent(new CustomEvent("admin:create", { detail: { section } }))
-      }
-    }
-    window.addEventListener("admin:create" as any, handleCreateEvent as EventListener)
-    return () => {
-      window.removeEventListener("admin:create" as any, handleCreateEvent as EventListener)
-    }
-  }, [pathname])
+
 
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full items-center gap-4 border-b bg-background/80 px-4 backdrop-blur">

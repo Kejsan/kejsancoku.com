@@ -108,6 +108,18 @@ export default function PromosPage() {
 
   useEffect(() => {
     void fetchPromos()
+    
+    // Check URL params for create trigger
+    const searchParams = new URLSearchParams(window.location.search)
+    if (searchParams.get("create") === "true") {
+      // Default to PRE_FOOTER_CARD for generic create action
+      setEditingPromo(null)
+      setDialogPlacement(PromoPlacement.PRE_FOOTER_CARD)
+      setIsDialogOpen(true)
+      // Remove query param without full reload
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, "", newUrl)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

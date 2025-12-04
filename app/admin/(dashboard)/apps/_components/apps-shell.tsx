@@ -71,19 +71,7 @@ export function AppsShell({ initialApps }: AppsShellProps) {
 
   const openCreateDrawer = React.useCallback(() => setDrawerState({ mode: "create" }), [])
 
-  // Listen for create events from topbar
-  React.useEffect(() => {
-    const handleCreateEvent = (event: CustomEvent) => {
-      if (event.detail?.section === "/admin/apps") {
-        openCreateDrawer()
-        router.replace("/admin/apps")
-      }
-    }
-    window.addEventListener("admin:create" as any, handleCreateEvent as EventListener)
-    return () => {
-      window.removeEventListener("admin:create" as any, handleCreateEvent as EventListener)
-    }
-  }, [openCreateDrawer, router])
+
 
   // Check URL params for create trigger
   React.useEffect(() => {
