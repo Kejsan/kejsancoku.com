@@ -292,7 +292,7 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
 
       startTransition(() => {
         void (async () => {
-          const result = await updatePost(drawerState.post!.slug, parsed.data)
+          const result = await updatePost(drawerState.post!.id, parsed.data)
           if (!result.ok) {
             setPosts(snapshot)
             postsRef.current = snapshot
@@ -318,15 +318,15 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
 
   const handleBulkStatusChange = React.useCallback(
     (rows: PostRow[], clearSelection: () => void, target: "publish" | "draft") => {
-      const slugs = rows.map((row) => row.slug)
-      if (slugs.length === 0) return
+      const ids = rows.map((row) => row.id)
+      if (ids.length === 0) return
 
       startStatusTransition(() => {
         void (async () => {
           const result =
             target === "publish"
-              ? await bulkPublishPosts(slugs)
-              : await bulkUnpublishPosts(slugs)
+              ? await bulkPublishPosts(ids)
+              : await bulkUnpublishPosts(ids)
 
           if (!result.ok) {
             toast.error(result.message)
@@ -367,7 +367,7 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
 
     startTransition(() => {
       void (async () => {
-        const result = await deletePost(deleteTarget.slug)
+        const result = await deletePost(deleteTarget.id)
         if (!result.ok) {
           setPosts(snapshot)
           postsRef.current = snapshot
@@ -383,15 +383,15 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
 
   const confirmBulkDelete = React.useCallback(() => {
     if (!bulkDeleteState) return
-    const idsToDelete = new Set(bulkDeleteState.rows.map((row) => row.slug))
+    const idsToDelete = new Set(bulkDeleteState.rows.map((row) => row.id))
     const snapshot = postsRef.current
-    const remaining = snapshot.filter((post) => !idsToDelete.has(post.slug))
+    const remaining = snapshot.filter((post) => !idsToDelete.has(post.id))
     setPosts(remaining)
     postsRef.current = remaining
 
     startBulkTransition(() => {
       void (async () => {
-        const result = await bulkDeletePosts(bulkDeleteState.rows.map((row) => row.slug))
+        const result = await bulkDeletePosts(bulkDeleteState.rows.map((row) => row.id))
         if (!result.ok) {
           setPosts(snapshot)
           postsRef.current = snapshot
@@ -414,7 +414,7 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
     (post: PostRow) => {
       startQuickTransition(() => {
         void (async () => {
-          const result = await duplicatePost(post.slug)
+          const result = await duplicatePost(post.id)
           if (!result.ok) {
             toast.error(result.message)
             return
@@ -559,7 +559,7 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
             </div>
           )}
           isLoading={isPending || isBulkPending || isStatusPending}
-          getRowId={(row) => row.slug}
+          getRowId={(row) => row.id.toString()}
         />
       </div>
 

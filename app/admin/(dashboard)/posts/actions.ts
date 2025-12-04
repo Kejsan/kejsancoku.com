@@ -59,9 +59,12 @@ function normalizePostInput(
   input: PostFormValues,
   actorEmail: string | null,
   existing?: Post | null,
+  options?: { includeSlug?: boolean },
 ) {
+  const includeSlug = options?.includeSlug ?? true
+  const slug = input.slug.trim()
   const base = {
-    slug: input.slug.trim(),
+    ...(includeSlug ? { slug } : {}),
     title: input.title.trim(),
     content: input.content?.trim() ? input.content.trim() : null,
     metaDescription: input.metaDescription?.trim()
@@ -251,7 +254,7 @@ export async function bulkCreatePosts(
 }
 
 export async function updatePost(
-  slug: string,
+  id: number,
   input: PostFormValues,
 ): Promise<ActionResult<ReturnType<typeof serializePost>>> {
   if (!prisma) {
@@ -270,13 +273,18 @@ export async function updatePost(
   }
 
   try {
-    const existing = await prisma.post.findUnique({ where: { slug } })
+    const existing = await prisma.post.findUnique({ where: { id } })
     if (!existing) {
       return { ok: false, message: "Post not found" }
     }
 
-    const data = normalizePostInput(parsed.data, session.email ?? null, existing)
-    const post = await prisma.post.update({ where: { slug }, data })
+    const data = normalizePostInput(
+      parsed.data,
+      session.email ?? null,
+      existing,
+      { includeSlug: parsed.data.slug.trim() !== existing.slug },
+    )
+    const post = await prisma.post.update({ where: { id }, data })
     await recordAudit({
       actorEmail: session.email,
       entityType: "Post",
@@ -295,7 +303,7 @@ export async function updatePost(
   }
 }
 
-export async function deletePost(slug: string): Promise<ActionResult<{ slug: string }>> {
+export async function deletePost(id: number): Promise<ActionResult<{ slug: string }>> {
   if (!prisma) {
     return { ok: false, message: "Database is not configured." }
   }
@@ -306,17 +314,22 @@ export async function deletePost(slug: string): Promise<ActionResult<{ slug: str
   }
 
   try {
-    const post = await prisma.post.delete({ where: { slug } })
+    const existing = await prisma.post.findUnique({ where: { id } })
+    if (!existing) {
+      return { ok: false, message: "Post not found" }
+    }
+
+    const post = await prisma.post.delete({ where: { id } })
     await recordAudit({
       actorEmail: session.email,
       entityType: "Post",
-      entityId: slug,
+      entityId: post.slug,
       action: "DELETE",
       diff: buildAuditDiff(post, null),
     })
     revalidatePath("/admin/posts")
     revalidatePublicPostRoutesIfNeeded(post)
-    return { ok: true, data: { slug } }
+    return { ok: true, data: { slug: post.slug } }
   } catch (error) {
     console.error("Failed to delete post", error)
     const message = error instanceof Error ? error.message : "Failed to delete post"
@@ -325,7 +338,7 @@ export async function deletePost(slug: string): Promise<ActionResult<{ slug: str
 }
 
 export async function duplicatePost(
-  slug: string,
+  id: number,
 ): Promise<ActionResult<ReturnType<typeof serializePost>>> {
   if (!prisma) {
     return { ok: false, message: "Database is not configured." }
@@ -337,7 +350,7 @@ export async function duplicatePost(
   }
 
   try {
-    const existing = await prisma.post.findUnique({ where: { slug } })
+    const existing = await prisma.post.findUnique({ where: { id } })
     if (!existing) {
       return { ok: false, message: "Post not found" }
     }
@@ -378,7 +391,7 @@ export async function duplicatePost(
   }
 }
 
-export async function bulkDeletePosts(slugs: string[]): Promise<ActionResult<{ count: number }>> {
+export async function bulkDeletePosts(ids: number[]): Promise<ActionResult<{ count: number }>> {
   if (!prisma) {
     return { ok: false, message: "Database is not configured." }
   }
@@ -389,12 +402,12 @@ export async function bulkDeletePosts(slugs: string[]): Promise<ActionResult<{ c
   }
 
   try {
-    const posts = await prisma.post.findMany({ where: { slug: { in: slugs } } })
+    const posts = await prisma.post.findMany({ where: { id: { in: ids } } })
     if (posts.length === 0) {
       return { ok: true, data: { count: 0 } }
     }
 
-    await prisma.post.deleteMany({ where: { slug: { in: slugs } } })
+    await prisma.post.deleteMany({ where: { id: { in: ids } } })
     for (const post of posts) {
       await recordAudit({
         actorEmail: session.email,
@@ -416,7 +429,7 @@ export async function bulkDeletePosts(slugs: string[]): Promise<ActionResult<{ c
 }
 
 export async function bulkPublishPosts(
-  slugs: string[],
+  ids: number[],
 ): Promise<ActionResult<{ count: number; posts: ReturnType<typeof serializePost>[] }>> {
   const client = prisma
   if (!client) {
@@ -428,12 +441,12 @@ export async function bulkPublishPosts(
     return session
   }
 
-  if (slugs.length === 0) {
+  if (ids.length === 0) {
     return { ok: true, data: { count: 0, posts: [] } }
   }
 
   try {
-    const posts = await client.post.findMany({ where: { slug: { in: slugs } } })
+    const posts = await client.post.findMany({ where: { id: { in: ids } } })
     if (posts.length === 0) {
       return { ok: true, data: { count: 0, posts: [] } }
     }
@@ -455,10 +468,7 @@ export async function bulkPublishPosts(
 
     const updated = await client.$transaction(
       pendingUpdates.map(({ original, data }) =>
-        client.post.update({
-          where: { slug: original.slug },
-          data,
-        }),
+        client.post.update({ where: { id: original.id }, data }),
       ),
     )
 
@@ -489,7 +499,7 @@ export async function bulkPublishPosts(
 }
 
 export async function bulkUnpublishPosts(
-  slugs: string[],
+  ids: number[],
 ): Promise<ActionResult<{ count: number; posts: ReturnType<typeof serializePost>[] }>> {
   const client = prisma
   if (!client) {
@@ -501,12 +511,12 @@ export async function bulkUnpublishPosts(
     return session
   }
 
-  if (slugs.length === 0) {
+  if (ids.length === 0) {
     return { ok: true, data: { count: 0, posts: [] } }
   }
 
   try {
-    const posts = await client.post.findMany({ where: { slug: { in: slugs } } })
+    const posts = await client.post.findMany({ where: { id: { in: ids } } })
     if (posts.length === 0) {
       return { ok: true, data: { count: 0, posts: [] } }
     }
@@ -528,10 +538,7 @@ export async function bulkUnpublishPosts(
 
     const updated = await client.$transaction(
       pendingUpdates.map(({ original, data }) =>
-        client.post.update({
-          where: { slug: original.slug },
-          data,
-        }),
+        client.post.update({ where: { id: original.id }, data }),
       ),
     )
 
