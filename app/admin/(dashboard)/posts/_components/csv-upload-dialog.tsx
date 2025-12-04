@@ -121,7 +121,10 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
               row.status = status as "draft" | "scheduled" | "published"
             }
           } else if (header === "scheduledat" || header === "publishedat") {
-            row[header === "scheduledat" ? "scheduledAt" : "publishedAt" as keyof CSVRow] = value || undefined
+            const dateKey: "scheduledAt" | "publishedAt" =
+              header === "scheduledat" ? "scheduledAt" : "publishedAt"
+
+            row[dateKey] = value || undefined
           }
         })
 
@@ -215,6 +218,13 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
               // fallback if CSV has something unexpected
               row.status = "draft"
             }
+
+            // Date fields
+          } else if (header === "scheduledat" || header === "publishedat") {
+            const dateKey: "scheduledAt" | "publishedAt" =
+              header === "scheduledat" ? "scheduledAt" : "publishedAt"
+
+            row[dateKey] = value || undefined
 
             // Any other headers (if you have them)
           } else {
