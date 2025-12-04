@@ -588,7 +588,18 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
         open={csvUploadOpen}
         onOpenChange={setCsvUploadOpen}
         onUpload={async (rows) => {
-          const result = await bulkCreatePosts(rows)
+          const normalizedRows: PostFormValues[] = rows.map((row) => ({
+            title: row.title,
+            slug: row.slug,
+            content: row.content,
+            metaDescription: row.metaDescription,
+            featuredBanner: row.featuredBanner,
+            status: (row.status ?? "draft") as PostFormValues["status"],
+            scheduledAt: row.scheduledAt,
+            publishedAt: row.publishedAt,
+          }))
+
+          const result = await bulkCreatePosts(normalizedRows)
           if (!result.ok) {
             toast.error(result.message)
             return
