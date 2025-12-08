@@ -2,10 +2,9 @@
 // Skip running prisma migrate deploy during Netlify builds to avoid PgBouncer / pooler prepared statement conflicts.
 const { execSync } = require("child_process")
 
-if (process.env.NETLIFY) {
-  console.log("Skipping prisma migrate deploy on Netlify build (NETLIFY=true)")
-  process.exit(0)
-}
+// Check removed: We need to run migrations on Netlify to ensure DB schema is up to date.
+// Ensure DIRECT_URL is set in environment variables for proper migration with Supabase.
+// if (process.env.NETLIFY) { ... }
 
 try {
   execSync("pnpm exec prisma migrate deploy", { stdio: "inherit" })
