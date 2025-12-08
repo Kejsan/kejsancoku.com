@@ -70,16 +70,7 @@ export function AdminTopbar({ items, user }: AdminTopbarProps) {
     <header className="sticky top-0 z-40 flex h-16 w-full items-center gap-4 border-b bg-background/80 px-4 backdrop-blur">
       <div className="flex items-center gap-3">
         <AdminMobileNav items={items} />
-        <Separator orientation="vertical" className="hidden h-6 md:block" />
-        <form className="relative hidden max-w-sm flex-1 items-center md:flex">
-          <Search className="absolute left-3 h-4 w-4 text-muted-foreground" aria-hidden />
-          <Input
-            type="search"
-            placeholder="Search admin..."
-            className="h-9 w-full rounded-lg pl-9"
-            aria-label="Search admin"
-          />
-        </form>
+        {/* Search removed - implementation pending */}
       </div>
       <div className="flex flex-1 items-center justify-end gap-2">
         <DropdownMenu>
@@ -100,54 +91,15 @@ export function AdminTopbar({ items, user }: AdminTopbarProps) {
                   key={item.href}
                   onClick={() => handleCreate(item.href)}
                 >
-                  {item.label}
+                  <div className="flex items-center gap-2">
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </div>
                 </DropdownMenuItem>
               ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 relative">
-              <Bell className="h-4 w-4" />
-              {notificationCount > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {notificationCount > 9 ? "9+" : notificationCount}
-                </Badge>
-              )}
-              <span className="sr-only">Open notifications</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {notificationCount === 0 ? (
-              <DropdownMenuItem disabled>
-                You&apos;re all caught up! 🎉
-              </DropdownMenuItem>
-            ) : (
-              <>
-                <DropdownMenuItem>
-                  <div className="flex flex-col gap-1">
-                    <p className="text-sm font-medium">Recent activity</p>
-                    <p className="text-xs text-muted-foreground">
-                      {notificationCount} new notification{notificationCount !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setNotificationCount(0)}
-                  className="text-center justify-center"
-                >
-                  Mark all as read
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
