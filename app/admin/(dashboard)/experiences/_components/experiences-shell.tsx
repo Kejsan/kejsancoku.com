@@ -1,12 +1,11 @@
 "use client"
 
-import type { Prisma } from "@prisma/client"
 import * as React from "react"
 import { useTransition } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
+import { Prisma } from "@prisma/client"
 
-import { DataTable } from "@/components/admin/ui/data-table"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +17,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { AdminCard } from "@/components/admin/admin-card"
 import {
   bulkDeleteExperiences,
   createExperience,
@@ -38,7 +39,8 @@ import {
   splitMultiline,
 } from "../parsers"
 import { ExperienceFormDrawer, type ExperienceFormDrawerMode } from "./experience-form-drawer"
-import { createExperienceColumns, type ExperienceRow } from "./experience-columns"
+
+export type ExperienceRow = SerializedExperience
 
 const EMPTY_FORM: ExperienceFormValues = {
   company: "",
@@ -103,13 +105,21 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
     experiencesRef.current = experiences
   }, [experiences])
 
+  const [searchQuery, setSearchQuery] = React.useState("")
   const [drawerState, setDrawerState] = React.useState<DrawerState | null>(null)
   const [deleteTarget, setDeleteTarget] = React.useState<ExperienceRow | null>(null)
-  const [bulkDeleteState, setBulkDeleteState] = React.useState<BulkDeleteState | null>(null)
 
   const [isPending, startTransition] = useTransition()
-  const [isBulkPending, startBulkTransition] = useTransition()
   const [, startQuickTransition] = useTransition()
+
+  const filteredExperiences = React.useMemo(() => {
+    if (!searchQuery) return experiences
+    const lower = searchQuery.toLowerCase()
+    return experiences.filter((exp) =>
+      exp.company.toLowerCase().includes(lower) ||
+      exp.title.toLowerCase().includes(lower)
+    )
+  }, [experiences, searchQuery])
 
   const openCreateDrawer = React.useCallback(() => setDrawerState({ mode: "create" }), [])
 
@@ -252,28 +262,28 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
       const optimistic = snapshot.map((experience) =>
         experience.id === drawerState.experience?.id
           ? {
-              ...experience,
-              company: parsed.data.company.trim(),
-              title: parsed.data.title.trim(),
-              period: parsed.data.period?.trim() ? parsed.data.period.trim() : null,
-              location: parsed.data.location?.trim() ? parsed.data.location.trim() : null,
-              startDate: new Date(parsed.data.startDate).toISOString(),
-              endDate: parsed.data.endDate?.trim()
-                ? new Date(parsed.data.endDate).toISOString()
-                : null,
-              description: parsed.data.description?.trim()?.length
-                ? parsed.data.description.trim()
-                : null,
-              achievements,
-              fullDescription: parsed.data.fullDescription?.trim()?.length
-                ? parsed.data.fullDescription.trim()
-                : null,
-              responsibilities,
-              skills,
-              careerProgression: careerProgression.data,
-              previousRole: previousRole.data,
-              updatedAt: new Date().toISOString(),
-            }
+            ...experience,
+            company: parsed.data.company.trim(),
+            title: parsed.data.title.trim(),
+            period: parsed.data.period?.trim() ? parsed.data.period.trim() : null,
+            location: parsed.data.location?.trim() ? parsed.data.location.trim() : null,
+            startDate: new Date(parsed.data.startDate).toISOString(),
+            endDate: parsed.data.endDate?.trim()
+              ? new Date(parsed.data.endDate).toISOString()
+              : null,
+            description: parsed.data.description?.trim()?.length
+              ? parsed.data.description.trim()
+              : null,
+            achievements,
+            fullDescription: parsed.data.fullDescription?.trim()?.length
+              ? parsed.data.fullDescription.trim()
+              : null,
+            responsibilities,
+            skills,
+            careerProgression: careerProgression.data,
+            previousRole: previousRole.data,
+            updatedAt: new Date().toISOString(),
+          }
           : experience,
       )
       setExperiences(optimistic)
@@ -333,57 +343,6 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
     })
   }, [deleteTarget, startTransition])
 
-  const confirmBulkDelete = React.useCallback(() => {
-    if (!bulkDeleteState) return
-    const ids = bulkDeleteState.rows.map((row) => row.id)
-    const snapshot = experiencesRef.current
-    const remaining = snapshot.filter((experience) => !ids.includes(experience.id))
-    setExperiences(remaining)
-    experiencesRef.current = remaining
-
-    startBulkTransition(() => {
-      void (async () => {
-        const result = await bulkDeleteExperiences(ids)
-        if (!result.ok) {
-          setExperiences(snapshot)
-          experiencesRef.current = snapshot
-          toast.error(result.message)
-          return
-        }
-
-        toast.success(
-          result.data.count > 0
-            ? `Deleted ${result.data.count} ${result.data.count === 1 ? "experience" : "experiences"}`
-            : "No experiences deleted",
-        )
-        bulkDeleteState.clearSelection()
-        setBulkDeleteState(null)
-      })()
-    })
-  }, [bulkDeleteState, startBulkTransition])
-
-  const handleQuickDuplicate = React.useCallback(
-    (experience: ExperienceRow) => {
-      startQuickTransition(() => {
-        void (async () => {
-          const result = await duplicateExperience(experience.id)
-          if (!result.ok) {
-            toast.error(result.message)
-            return
-          }
-
-          setExperiences((current) => {
-            const next = [result.data, ...current]
-            experiencesRef.current = next
-            return next
-          })
-          toast.success("Experience duplicated")
-        })()
-      })
-    },
-    [startQuickTransition],
-  )
-
   const handleTogglePublished = React.useCallback(
     (experience: ExperienceRow) => {
       const snapshot = experiencesRef.current
@@ -417,17 +376,7 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
     [startTransition],
   )
 
-  const columns = React.useMemo(
-    () =>
-      createExperienceColumns({
-        onEdit: openEditDrawer,
-        onDuplicate: openDuplicateDrawer,
-        onQuickDuplicate: handleQuickDuplicate,
-        onDelete: handleDelete,
-        onTogglePublished: handleTogglePublished,
-      }),
-    [handleDelete, handleQuickDuplicate, handleTogglePublished, openDuplicateDrawer, openEditDrawer],
-  )
+
 
   const drawerDefaultValues = React.useMemo((): ExperienceFormValues => {
     if (!drawerState || drawerState.mode === "create") {
@@ -461,45 +410,84 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
   return (
     <>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Experiences</h1>
-          <p className="text-sm text-muted-foreground">
-            Keep your professional history up to date for visitors reviewing your background.
-          </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Experiences</h1>
+            <p className="text-sm text-muted-foreground">
+              Keep your professional history up to date for visitors reviewing your background.
+            </p>
+          </div>
+          <Button onClick={openCreateDrawer}>
+            New experience
+          </Button>
         </div>
-        <DataTable
-          columns={columns}
-          data={experiences}
-          searchKey="company"
-          searchPlaceholder="Search experiences..."
-          emptyState={{
-            title: "No experiences yet",
-            description: "Document your journey by adding your first role.",
-            action: (
-              <Button onClick={openCreateDrawer} size="sm">
+
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search experiences..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+
+        {filteredExperiences.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-muted-foreground/40 bg-muted/40 px-6 py-16 text-center text-muted-foreground">
+            <p className="text-base font-medium">No experiences found</p>
+            <p className="max-w-lg text-sm text-muted-foreground/80">
+              {searchQuery ? "Try a different search term." : "Document your journey by adding your first role."}
+            </p>
+            {!searchQuery && (
+              <Button size="sm" onClick={openCreateDrawer}>
                 Create your first experience
               </Button>
-            ),
-          }}
-          primaryAction={
-            <Button size="sm" onClick={openCreateDrawer}>
-              New experience
-            </Button>
-          }
-          bulkActions={({ rows, clearSelection }) => (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setBulkDeleteState({ rows, clearSelection })}
-              disabled={isBulkPending}
-              className="h-8"
-            >
-              Delete selected ({rows.length})
-            </Button>
-          )}
-          isLoading={isPending || isBulkPending}
-          getRowId={(row) => String(row.id)}
-        />
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredExperiences.map((exp) => {
+              const start = new Date(exp.startDate)
+              const end = exp.endDate ? new Date(exp.endDate) : null
+              const dateRange = `${start.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })} - ${end ? end.toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'Present'}`
+
+              return (
+                <AdminCard
+                  key={exp.id}
+                  title={exp.company}
+                  description={exp.title}
+                  status={exp.published ? "published" : "hidden"}
+                  actions={
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleTogglePublished(exp)}
+                      >
+                        {exp.published ? "Hide" : "Show"}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEditDrawer(exp)}>
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(exp)}
+                      >
+                        Delete
+                      </Button>
+                    </>
+                  }
+                  footer={
+                    <span className="text-xs text-muted-foreground">
+                      {dateRange}
+                    </span>
+                  }
+                />
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <ExperienceFormDrawer
@@ -544,26 +532,7 @@ export function ExperiencesShell({ initialExperiences }: ExperiencesShellProps) 
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={bulkDeleteState !== null} onOpenChange={(open) => !open && setBulkDeleteState(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {bulkDeleteState?.rows.length ?? 0} experiences?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the selected records and cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmBulkDelete}
-              disabled={isBulkPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
     </>
   )
 }

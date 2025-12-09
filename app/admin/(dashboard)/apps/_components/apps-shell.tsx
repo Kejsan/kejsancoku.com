@@ -5,7 +5,6 @@ import { useTransition } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
-import { DataTable } from "@/components/admin/ui/data-table"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,8 +16,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { AdminCard } from "@/components/admin/admin-card"
 import {
-  bulkDeleteWebApps,
   createWebApp,
   deleteWebApp,
   duplicateWebApp,
@@ -28,7 +28,8 @@ import {
 import { webAppFormSchema, type WebAppFormValues } from "../schema"
 import type { SerializedWebApp } from "../serializers"
 import { AppFormDrawer, type AppFormDrawerMode } from "./app-form-drawer"
-import { createAppColumns, type AppRow } from "./app-columns"
+
+export type AppRow = SerializedWebApp
 
 const EMPTY_FORM: WebAppFormValues = {
   name: "",
@@ -41,11 +42,6 @@ const EMPTY_FORM: WebAppFormValues = {
 type DrawerState = {
   mode: AppFormDrawerMode
   app?: AppRow
-}
-
-type BulkDeleteState = {
-  rows: AppRow[]
-  clearSelection: () => void
 }
 
 type AppsShellProps = {
@@ -61,17 +57,20 @@ export function AppsShell({ initialApps }: AppsShellProps) {
     appsRef.current = apps
   }, [apps])
 
+  const [searchQuery, setSearchQuery] = React.useState("")
   const [drawerState, setDrawerState] = React.useState<DrawerState | null>(null)
   const [deleteTarget, setDeleteTarget] = React.useState<AppRow | null>(null)
-  const [bulkDeleteState, setBulkDeleteState] = React.useState<BulkDeleteState | null>(null)
 
   const [isPending, startTransition] = useTransition()
-  const [isBulkPending, startBulkTransition] = useTransition()
   const [, startQuickTransition] = useTransition()
 
+  const filteredApps = React.useMemo(() => {
+    if (!searchQuery) return apps
+    const lower = searchQuery.toLowerCase()
+    return apps.filter((app) => app.name.toLowerCase().includes(lower) || app.description?.toLowerCase().includes(lower))
+  }, [apps, searchQuery])
+
   const openCreateDrawer = React.useCallback(() => setDrawerState({ mode: "create" }), [])
-
-
 
   // Check URL params for create trigger
   React.useEffect(() => {
@@ -80,7 +79,9 @@ export function AppsShell({ initialApps }: AppsShellProps) {
       router.replace("/admin/apps")
     }
   }, [searchParams, openCreateDrawer, router])
+
   const openEditDrawer = React.useCallback((app: AppRow) => setDrawerState({ mode: "edit", app }), [])
+
   const openDuplicateDrawer = React.useCallback((app: AppRow) => {
     setDrawerState({
       mode: "duplicate",
@@ -92,6 +93,7 @@ export function AppsShell({ initialApps }: AppsShellProps) {
       },
     })
   }, [])
+
   const closeDrawer = React.useCallback(() => setDrawerState(null), [])
 
   const handleCreate = React.useCallback(
@@ -156,12 +158,12 @@ export function AppsShell({ initialApps }: AppsShellProps) {
       const optimistic = snapshot.map((app) =>
         app.id === drawerState.app?.id
           ? {
-              ...app,
-              name: parsed.data.name,
-              url: parsed.data.url && parsed.data.url.length > 0 ? parsed.data.url : null,
-              description: parsed.data.description?.length ? parsed.data.description : null,
-              updatedAt: new Date().toISOString(),
-            }
+            ...app,
+            name: parsed.data.name,
+            url: parsed.data.url && parsed.data.url.length > 0 ? parsed.data.url : null,
+            description: parsed.data.description?.length ? parsed.data.description : null,
+            updatedAt: new Date().toISOString(),
+          }
           : app,
       )
       setApps(optimistic)
@@ -221,65 +223,6 @@ export function AppsShell({ initialApps }: AppsShellProps) {
     })
   }, [deleteTarget, startTransition])
 
-  const confirmBulkDelete = React.useCallback(() => {
-    if (!bulkDeleteState) return
-    const ids = bulkDeleteState.rows.map((row) => row.id)
-    const snapshot = appsRef.current
-    const remaining = snapshot.filter((app) => !ids.includes(app.id))
-    setApps(remaining)
-    appsRef.current = remaining
-
-    startBulkTransition(() => {
-      void (async () => {
-        const result = await bulkDeleteWebApps(ids)
-        if (!result.ok) {
-          setApps(snapshot)
-          appsRef.current = snapshot
-          toast.error(result.message)
-          return
-        }
-
-        toast.success(
-          result.data.count > 0
-            ? `Deleted ${result.data.count} ${result.data.count === 1 ? "app" : "apps"}`
-            : "No apps deleted",
-        )
-        bulkDeleteState.clearSelection()
-        setBulkDeleteState(null)
-      })()
-    })
-  }, [bulkDeleteState, startBulkTransition])
-
-  const handleQuickDuplicate = React.useCallback(
-    (app: AppRow) => {
-      startQuickTransition(() => {
-        void (async () => {
-          const result = await duplicateWebApp(app.id)
-          if (!result.ok) {
-            toast.error(result.message)
-            return
-          }
-
-          setApps((current) => {
-            const next = [result.data, ...current]
-            appsRef.current = next
-            return next
-          })
-          toast.success("App duplicated")
-        })()
-      })
-    },
-    [startQuickTransition],
-  )
-
-  const handleView = React.useCallback(
-    (app: AppRow) => {
-      if (!app.id || app.id <= 0) return
-      router.push(`/apps/${app.id}`)
-    },
-    [router],
-  )
-
   const handleTogglePublished = React.useCallback(
     (app: AppRow) => {
       const snapshot = appsRef.current
@@ -313,19 +256,6 @@ export function AppsShell({ initialApps }: AppsShellProps) {
     [startTransition],
   )
 
-  const columns = React.useMemo(
-    () =>
-      createAppColumns({
-        onView: handleView,
-        onEdit: openEditDrawer,
-        onDuplicate: openDuplicateDrawer,
-        onQuickDuplicate: handleQuickDuplicate,
-        onDelete: handleDelete,
-        onTogglePublished: handleTogglePublished,
-      }),
-    [handleDelete, handleQuickDuplicate, handleTogglePublished, handleView, openDuplicateDrawer, openEditDrawer],
-  )
-
   const drawerDefaultValues = React.useMemo((): WebAppFormValues => {
     if (!drawerState) return EMPTY_FORM
     if (drawerState.mode === "create") return EMPTY_FORM
@@ -342,45 +272,80 @@ export function AppsShell({ initialApps }: AppsShellProps) {
   return (
     <>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Apps</h1>
-          <p className="text-sm text-muted-foreground">
-            Showcase the tools and products you maintain or recommend.
-          </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Apps</h1>
+            <p className="text-sm text-muted-foreground">
+              Showcase the tools and products you maintain or recommend.
+            </p>
+          </div>
+          <Button onClick={openCreateDrawer}>
+            New app
+          </Button>
         </div>
-        <DataTable
-          columns={columns}
-          data={apps}
-          searchKey="name"
-          searchPlaceholder="Search apps..."
-          emptyState={{
-            title: "No apps yet",
-            description: "Add your first app to populate this list.",
-            action: (
-              <Button onClick={openCreateDrawer} size="sm">
+
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search apps..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+
+        {filteredApps.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-muted-foreground/40 bg-muted/40 px-6 py-16 text-center text-muted-foreground">
+            <p className="text-base font-medium">No apps found</p>
+            <p className="max-w-lg text-sm text-muted-foreground/80">
+              {searchQuery ? "Try a different search term." : "Add your first app to populate this list."}
+            </p>
+            {!searchQuery && (
+              <Button size="sm" onClick={openCreateDrawer}>
                 Create your first app
               </Button>
-            ),
-          }}
-          primaryAction={
-            <Button size="sm" onClick={openCreateDrawer}>
-              New app
-            </Button>
-          }
-          bulkActions={({ rows, clearSelection }) => (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setBulkDeleteState({ rows, clearSelection })}
-              disabled={isBulkPending}
-              className="h-8"
-            >
-              Delete selected ({rows.length})
-            </Button>
-          )}
-          isLoading={isPending || isBulkPending}
-          getRowId={(row) => String(row.id)}
-        />
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredApps.map((app) => (
+              <AdminCard
+                key={app.id}
+                title={app.name}
+                description={app.description}
+                href={app.url}
+                image={app.image}
+                status={app.published ? "published" : "hidden"}
+                actions={
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleTogglePublished(app)}
+                    >
+                      {app.published ? "Hide" : "Show"}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => openEditDrawer(app)}>
+                      Edit
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => handleDelete(app)}
+                    >
+                      Delete
+                    </Button>
+                  </>
+                }
+                footer={
+                  <span className="text-xs text-muted-foreground">
+                    Updated {new Date(app.updatedAt).toLocaleDateString()}
+                  </span>
+                }
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <AppFormDrawer
@@ -417,27 +382,6 @@ export function AppsShell({ initialApps }: AppsShellProps) {
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={bulkDeleteState !== null} onOpenChange={(open) => !open && setBulkDeleteState(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {bulkDeleteState?.rows.length ?? 0} apps?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the selected apps and cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmBulkDelete}
-              disabled={isBulkPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete

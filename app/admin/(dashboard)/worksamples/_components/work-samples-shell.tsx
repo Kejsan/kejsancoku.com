@@ -3,8 +3,8 @@
 import * as React from "react"
 import { useTransition } from "react"
 import { toast } from "sonner"
+import { LinkIcon, Link } from "lucide-react"
 
-import { DataTable } from "@/components/admin/ui/data-table"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,8 +16,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { AdminCard } from "@/components/admin/admin-card"
 import {
-  bulkDeleteWorkSamples,
   createWorkSample,
   deleteWorkSample,
   duplicateWorkSample,
@@ -28,7 +29,8 @@ import { workSampleFormSchema, type WorkSampleFormValues } from "../schema"
 import type { SerializedWorkSample } from "../serializers"
 import { WorkSampleFormDrawer, type WorkSampleFormDrawerMode } from "./work-sample-form-drawer"
 import { WorkSamplePreviewDrawer } from "./work-sample-preview-drawer"
-import { createWorkSampleColumns, type WorkSampleRow } from "./work-sample-columns"
+
+export type WorkSampleRow = SerializedWorkSample
 
 const EMPTY_FORM: WorkSampleFormValues = {
   title: "",
@@ -39,11 +41,6 @@ const EMPTY_FORM: WorkSampleFormValues = {
 type DrawerState = {
   mode: WorkSampleFormDrawerMode
   sample?: WorkSampleRow
-}
-
-type BulkDeleteState = {
-  rows: WorkSampleRow[]
-  clearSelection: () => void
 }
 
 type WorkSamplesShellProps = {
@@ -57,14 +54,22 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
     samplesRef.current = samples
   }, [samples])
 
+  const [searchQuery, setSearchQuery] = React.useState("")
   const [drawerState, setDrawerState] = React.useState<DrawerState | null>(null)
   const [deleteTarget, setDeleteTarget] = React.useState<WorkSampleRow | null>(null)
-  const [bulkDeleteState, setBulkDeleteState] = React.useState<BulkDeleteState | null>(null)
   const [previewSample, setPreviewSample] = React.useState<WorkSampleRow | null>(null)
 
   const [isPending, startTransition] = useTransition()
-  const [isBulkPending, startBulkTransition] = useTransition()
   const [, startQuickTransition] = useTransition()
+
+  const filteredSamples = React.useMemo(() => {
+    if (!searchQuery) return samples
+    const lower = searchQuery.toLowerCase()
+    return samples.filter((sample) =>
+      sample.title.toLowerCase().includes(lower) ||
+      (sample.description && sample.description.toLowerCase().includes(lower))
+    )
+  }, [samples, searchQuery])
 
   const openCreateDrawer = React.useCallback(() => setDrawerState({ mode: "create" }), [])
 
@@ -78,7 +83,9 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
       window.history.replaceState({}, "", newUrl)
     }
   }, [openCreateDrawer])
+
   const openEditDrawer = React.useCallback((sample: WorkSampleRow) => setDrawerState({ mode: "edit", sample }), [])
+
   const openDuplicateDrawer = React.useCallback((sample: WorkSampleRow) => {
     setDrawerState({
       mode: "duplicate",
@@ -90,6 +97,7 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
       },
     })
   }, [])
+
   const closeDrawer = React.useCallback(() => setDrawerState(null), [])
 
   const handleCreate = React.useCallback(
@@ -152,12 +160,12 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
       const optimistic = snapshot.map((sample) =>
         sample.id === drawerState.sample?.id
           ? {
-              ...sample,
-              title: parsed.data.title,
-              url: parsed.data.url && parsed.data.url.length > 0 ? parsed.data.url : null,
-              description: parsed.data.description?.length ? parsed.data.description : null,
-              updatedAt: new Date().toISOString(),
-            }
+            ...sample,
+            title: parsed.data.title,
+            url: parsed.data.url && parsed.data.url.length > 0 ? parsed.data.url : null,
+            description: parsed.data.description?.length ? parsed.data.description : null,
+            updatedAt: new Date().toISOString(),
+          }
           : sample,
       )
       setSamples(optimistic)
@@ -217,61 +225,6 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
     })
   }, [deleteTarget, startTransition])
 
-  const confirmBulkDelete = React.useCallback(() => {
-    if (!bulkDeleteState) return
-    const ids = bulkDeleteState.rows.map((row) => row.id)
-    const snapshot = samplesRef.current
-    const remaining = snapshot.filter((sample) => !ids.includes(sample.id))
-    setSamples(remaining)
-    samplesRef.current = remaining
-
-    startBulkTransition(() => {
-      void (async () => {
-        const result = await bulkDeleteWorkSamples(ids)
-        if (!result.ok) {
-          setSamples(snapshot)
-          samplesRef.current = snapshot
-          toast.error(result.message)
-          return
-        }
-
-        toast.success(
-          result.data.count > 0
-            ? `Deleted ${result.data.count} ${result.data.count === 1 ? "sample" : "samples"}`
-            : "No samples deleted",
-        )
-        bulkDeleteState.clearSelection()
-        setBulkDeleteState(null)
-      })()
-    })
-  }, [bulkDeleteState, startBulkTransition])
-
-  const handleQuickDuplicate = React.useCallback(
-    (sample: WorkSampleRow) => {
-      startQuickTransition(() => {
-        void (async () => {
-          const result = await duplicateWorkSample(sample.id)
-          if (!result.ok) {
-            toast.error(result.message)
-            return
-          }
-
-          setSamples((current) => {
-            const next = [result.data, ...current]
-            samplesRef.current = next
-            return next
-          })
-          toast.success("Work sample duplicated")
-        })()
-      })
-    },
-    [startQuickTransition],
-  )
-
-  const handleView = React.useCallback((sample: WorkSampleRow) => {
-    setPreviewSample(sample)
-  }, [])
-
   const handleTogglePublished = React.useCallback(
     (sample: WorkSampleRow) => {
       const snapshot = samplesRef.current
@@ -305,19 +258,6 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
     [startTransition],
   )
 
-  const columns = React.useMemo(
-    () =>
-      createWorkSampleColumns({
-        onView: handleView,
-        onEdit: openEditDrawer,
-        onDuplicate: openDuplicateDrawer,
-        onQuickDuplicate: handleQuickDuplicate,
-        onDelete: handleDelete,
-        onTogglePublished: handleTogglePublished,
-      }),
-    [handleDelete, handleQuickDuplicate, handleTogglePublished, handleView, openDuplicateDrawer, openEditDrawer],
-  )
-
   const drawerDefaultValues = React.useMemo((): WorkSampleFormValues => {
     if (!drawerState) return EMPTY_FORM
     if (drawerState.mode === "create") return EMPTY_FORM
@@ -332,45 +272,84 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
   return (
     <>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Work samples</h1>
-          <p className="text-sm text-muted-foreground">
-            Share relevant projects and resources that demonstrate your expertise.
-          </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Work samples</h1>
+            <p className="text-sm text-muted-foreground">
+              Share relevant projects and resources that demonstrate your expertise.
+            </p>
+          </div>
+          <Button onClick={openCreateDrawer}>
+            New work sample
+          </Button>
         </div>
-        <DataTable
-          columns={columns}
-          data={samples}
-          searchKey="title"
-          searchPlaceholder="Search samples..."
-          emptyState={{
-            title: "No work samples yet",
-            description: "Add case studies or projects to build trust.",
-            action: (
-              <Button onClick={openCreateDrawer} size="sm">
+
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search samples..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+
+        {filteredSamples.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-muted-foreground/40 bg-muted/40 px-6 py-16 text-center text-muted-foreground">
+            <p className="text-base font-medium">No work samples found</p>
+            <p className="max-w-lg text-sm text-muted-foreground/80">
+              {searchQuery ? "Try a different search term." : "Create your first work sample to build trust."}
+            </p>
+            {!searchQuery && (
+              <Button size="sm" onClick={openCreateDrawer}>
                 Create your first work sample
               </Button>
-            ),
-          }}
-          primaryAction={
-            <Button size="sm" onClick={openCreateDrawer}>
-              New work sample
-            </Button>
-          }
-          bulkActions={({ rows, clearSelection }) => (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setBulkDeleteState({ rows, clearSelection })}
-              disabled={isBulkPending}
-              className="h-8"
-            >
-              Delete selected ({rows.length})
-            </Button>
-          )}
-          isLoading={isPending || isBulkPending}
-          getRowId={(row) => String(row.id)}
-        />
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredSamples.map((sample) => (
+              <AdminCard
+                key={sample.id}
+                title={sample.title}
+                description={sample.description ?? ""}
+                status={sample.published ? "published" : "hidden"}
+                actions={
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => handleTogglePublished(sample)}>
+                      {sample.published ? "Hide" : "Show"}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => openEditDrawer(sample)}>
+                      Edit
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => handleDelete(sample)}
+                    >
+                      Delete
+                    </Button>
+                  </>
+                }
+                footer={
+                  sample.url ? (
+                    <a
+                      href={sample.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:underline"
+                    >
+                      <LinkIcon className="h-3 w-3" />
+                      {new URL(sample.url).hostname}
+                    </a>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">No URL</span>
+                  )
+                }
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <WorkSampleFormDrawer
@@ -407,27 +386,6 @@ export function WorkSamplesShell({ initialWorkSamples }: WorkSamplesShellProps) 
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={bulkDeleteState !== null} onOpenChange={(open) => !open && setBulkDeleteState(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {bulkDeleteState?.rows.length ?? 0} work samples?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the selected samples and cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmBulkDelete}
-              disabled={isBulkPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete

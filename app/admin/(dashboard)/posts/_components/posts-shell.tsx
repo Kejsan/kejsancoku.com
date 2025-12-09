@@ -7,7 +7,6 @@ import Link from "next/link"
 import { Filter, Upload } from "lucide-react"
 import { toast } from "sonner"
 
-import { DataTable } from "@/components/admin/ui/data-table"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,20 +18,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { AdminCard } from "@/components/admin/admin-card"
 import {
   bulkCreatePosts,
-  bulkDeletePosts,
-  bulkPublishPosts,
-  bulkUnpublishPosts,
   createPost,
   deletePost,
   duplicatePost,
@@ -43,7 +32,8 @@ import { clientDateTimeToIso } from "../date-utils"
 import { postFormSchema, type PostFormValues } from "../schema"
 import type { SerializedPost } from "../serializers"
 import { PostFormDrawer, type PostFormDrawerMode } from "./post-form-drawer"
-import { createPostColumns, type PostRow } from "./post-columns"
+
+export type PostRow = SerializedPost
 
 const EMPTY_FORM: PostFormValues = {
   title: "",
@@ -59,20 +49,6 @@ const EMPTY_FORM: PostFormValues = {
 type DrawerState = {
   mode: PostFormDrawerMode
   post?: PostRow
-}
-
-type BulkDeleteState = {
-  rows: PostRow[]
-  clearSelection: () => void
-}
-
-type StatusFilterValue = "all" | "draft" | "scheduled" | "published"
-
-const STATUS_FILTER_LABELS: Record<StatusFilterValue, string> = {
-  all: "All statuses",
-  draft: "Drafts",
-  scheduled: "Scheduled",
-  published: "Published",
 }
 
 function toNullableString(value?: string | null) {
@@ -152,16 +128,22 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
     postsRef.current = posts
   }, [posts])
 
+  const [searchQuery, setSearchQuery] = React.useState("")
   const [drawerState, setDrawerState] = React.useState<DrawerState | null>(null)
   const [deleteTarget, setDeleteTarget] = React.useState<PostRow | null>(null)
-  const [bulkDeleteState, setBulkDeleteState] = React.useState<BulkDeleteState | null>(null)
-  const [statusFilter, setStatusFilter] = React.useState<StatusFilterValue>("all")
   const [csvUploadOpen, setCsvUploadOpen] = React.useState(false)
 
   const [isPending, startTransition] = useTransition()
-  const [isBulkPending, startBulkTransition] = useTransition()
-  const [isStatusPending, startStatusTransition] = useTransition()
   const [, startQuickTransition] = useTransition()
+
+  const filteredPosts = React.useMemo(() => {
+    if (!searchQuery) return posts
+    const lower = searchQuery.toLowerCase()
+    return posts.filter((post) =>
+      post.title.toLowerCase().includes(lower) ||
+      post.slug.toLowerCase().includes(lower)
+    )
+  }, [posts, searchQuery])
 
   const ensureSlug = React.useCallback((slug: string) => {
     const existingSlugs = new Set(postsRef.current.map((post) => post.slug))
@@ -302,41 +284,6 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
     [handleCreate],
   )
 
-  const handleBulkStatusChange = React.useCallback(
-    (rows: PostRow[], clearSelection: () => void, target: "publish" | "draft") => {
-      const ids = rows.map((row) => row.id)
-      if (ids.length === 0) return
-
-      startStatusTransition(() => {
-        void (async () => {
-          const result =
-            target === "publish"
-              ? await bulkPublishPosts(ids)
-              : await bulkUnpublishPosts(ids)
-
-          if (!result.ok) {
-            toast.error(result.message)
-            return
-          }
-
-          applyServerUpdates(result.data.posts)
-          clearSelection()
-
-          if (result.data.count === 0) {
-            toast.info("No posts updated")
-          } else {
-            toast.success(
-              target === "publish"
-                ? `Published ${result.data.count} ${result.data.count === 1 ? "post" : "posts"}`
-                : `Unpublished ${result.data.count} ${result.data.count === 1 ? "post" : "posts"}`,
-            )
-          }
-        })()
-      })
-    },
-    [applyServerUpdates, startStatusTransition],
-  )
-
   const handleDelete = React.useCallback(
     (post: PostRow) => {
       setDeleteTarget(post)
@@ -367,69 +314,6 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
     })
   }, [deleteTarget, startTransition])
 
-  const confirmBulkDelete = React.useCallback(() => {
-    if (!bulkDeleteState) return
-    const idsToDelete = new Set(bulkDeleteState.rows.map((row) => row.id))
-    const snapshot = postsRef.current
-    const remaining = snapshot.filter((post) => !idsToDelete.has(post.id))
-    setPosts(remaining)
-    postsRef.current = remaining
-
-    startBulkTransition(() => {
-      void (async () => {
-        const result = await bulkDeletePosts(bulkDeleteState.rows.map((row) => row.id))
-        if (!result.ok) {
-          setPosts(snapshot)
-          postsRef.current = snapshot
-          toast.error(result.message)
-          return
-        }
-
-        toast.success(
-          result.data.count > 0
-            ? `Deleted ${result.data.count} ${result.data.count === 1 ? "post" : "posts"}`
-            : "No posts deleted",
-        )
-        bulkDeleteState.clearSelection()
-        setBulkDeleteState(null)
-      })()
-    })
-  }, [bulkDeleteState, startBulkTransition])
-
-  const handleQuickDuplicate = React.useCallback(
-    (post: PostRow) => {
-      startQuickTransition(() => {
-        void (async () => {
-          const result = await duplicatePost(post.id)
-          if (!result.ok) {
-            toast.error(result.message)
-            return
-          }
-
-          setPosts((current) => {
-            const next = [result.data, ...current].sort(
-              (a, b) => new Date(b.updatedAt).valueOf() - new Date(a.updatedAt).valueOf(),
-            )
-            postsRef.current = next
-            return next
-          })
-          toast.success("Post duplicated")
-        })()
-      })
-    },
-    [startQuickTransition],
-  )
-
-  const columns = React.useMemo(
-    () =>
-      createPostColumns({
-        onEdit: navigateToEdit,
-        onDuplicate: openDuplicateDrawer,
-        onQuickDuplicate: handleQuickDuplicate,
-        onDelete: handleDelete,
-      }),
-    [handleDelete, handleQuickDuplicate, openDuplicateDrawer, navigateToEdit],
-  )
 
   const drawerDefaultValues = React.useMemo((): PostFormValues => {
     if (!drawerState) return EMPTY_FORM
@@ -452,101 +336,84 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Posts</h1>
             <p className="text-sm text-muted-foreground">
-              Manage your published content and drafts from a single place.
+              Manage your published content and drafts.
             </p>
           </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={openCreateDrawer}>
+              New post
+            </Button>
+            <Button size="icon" variant="outline" onClick={() => setCsvUploadOpen(true)} title="Bulk Upload">
+              <Upload className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <DataTable
-          columns={columns}
-          data={posts}
-          searchKey="title"
-          searchPlaceholder="Search title or slug..."
-          emptyState={{
-            title: "No posts yet",
-            description: "Create your first post to start sharing updates.",
-            action: (
-              <Button onClick={openCreateDrawer} size="sm">
+
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search posts..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+
+        {filteredPosts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-muted-foreground/40 bg-muted/40 px-6 py-16 text-center text-muted-foreground">
+            <p className="text-base font-medium">No posts found</p>
+            <p className="max-w-lg text-sm text-muted-foreground/80">
+              {searchQuery ? "Try a different search term." : "Create your first post to start sharing updates."}
+            </p>
+            {!searchQuery && (
+              <Button size="sm" onClick={openCreateDrawer}>
                 Create your first post
               </Button>
-            ),
-          }}
-          primaryAction={
-            <div className="flex items-center gap-2">
-              <Button size="sm" asChild>
-                <Link href="/admin/posts/create">New post</Link>
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setCsvUploadOpen(true)}>
-                <Upload className="mr-2 h-4 w-4" />
-                Bulk upload
-              </Button>
-            </div>
-          }
-          toolbarActions={(table) => (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 gap-2">
-                  <Filter className="h-4 w-4" aria-hidden />
-                  {STATUS_FILTER_LABELS[statusFilter]}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel>Filter status</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup
-                  value={statusFilter}
-                  onValueChange={(value) => {
-                    const nextValue = value as StatusFilterValue
-                    setStatusFilter(nextValue)
-                    const column = table.getColumn("status")
-                    column?.setFilterValue(nextValue === "all" ? undefined : nextValue)
-                  }}
-                >
-                  <DropdownMenuRadioItem value="all">All statuses</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="published">Published</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="scheduled">Scheduled</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="draft">Drafts</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          bulkActions={({ rows, clearSelection }) => (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleBulkStatusChange(rows, clearSelection, "publish")}
-                disabled={isStatusPending}
-                className="h-8"
-              >
-                Publish ({rows.length})
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkStatusChange(rows, clearSelection, "draft")}
-                disabled={isStatusPending}
-                className="h-8"
-              >
-                Unpublish
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setBulkDeleteState({ rows, clearSelection })}
-                disabled={isBulkPending}
-                className="h-8"
-              >
-                Delete ({rows.length})
-              </Button>
-            </div>
-          )}
-          isLoading={isPending || isBulkPending || isStatusPending}
-          getRowId={(row) => row.id.toString()}
-        />
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredPosts.map((post) => {
+              const status = post.status
+              const isPublished = status === 'published'
+              const date = new Date(post.updatedAt)
+              const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+
+              return (
+                <AdminCard
+                  key={post.id}
+                  title={post.title}
+                  description={post.metaDescription || post.slug}
+                  status={isPublished ? "published" : "hidden"}
+                  actions={
+                    <>
+                      <Button variant="ghost" size="sm" onClick={() => navigateToEdit(post)}>
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(post)}
+                      >
+                        Delete
+                      </Button>
+                    </>
+                  }
+                  footer={
+                    <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+                      <span className="capitalize">{status}</span>
+                      <span>Updated {dateStr}</span>
+                    </div>
+                  }
+                />
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <PostFormDrawer
@@ -598,27 +465,6 @@ export function PostsPageShell({ initialPosts }: PostsPageShellProps) {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} disabled={isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={bulkDeleteState !== null} onOpenChange={(open) => !open && setBulkDeleteState(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {bulkDeleteState?.rows.length ?? 0} posts?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the selected posts and cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmBulkDelete}
-              disabled={isBulkPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
